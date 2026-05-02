@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnTrack — Control Centre</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080810;--bg2:#0f0f1a;--bg3:#15151f;--bg4:#1c1c2a;--bg5:#222233;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.10);--border3:rgba(255,255,255,0.16);
+  --text:rgba(240,240,255,0.95);--text2:rgba(180,180,210,0.72);--text3:rgba(120,120,155,0.55);
+  --green:#00e87a;--green-bg:rgba(0,232,122,0.09);--green-bd:rgba(0,232,122,0.22);
+  --red:#ff3355;--red-bg:rgba(255,51,85,0.09);--red-bd:rgba(255,51,85,0.22);
+  --amber:#ffaa00;--amber-bg:rgba(255,170,0,0.09);--amber-bd:rgba(255,170,0,0.22);
+  --blue:#4d9eff;--blue-bg:rgba(77,158,255,0.09);--blue-bd:rgba(77,158,255,0.22);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,0.09);--purple-bd:rgba(167,139,250,0.22);
+  --teal:#2dd4bf;--teal-bg:rgba(45,212,191,0.09);--teal-bd:rgba(45,212,191,0.22);
+  --orange:#ff9800;--orange-bg:rgba(255,152,0,0.09);--orange-bd:rgba(255,152,0,0.22);
+  --r:8px;--rm:12px;--rl:16px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(77,158,255,0.05) 0%,transparent 70%);pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* ─── NAV ─── */
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;background:rgba(8,8,16,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-left{display:flex;align-items:center;gap:16px}
+.logo{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;letter-spacing:3px;color:var(--text);text-transform:uppercase}
+.logo span{color:var(--blue)}
+.nav-div{width:1px;height:18px;background:var(--border2)}
+.live-badge{display:flex;align-items:center;gap:5px;background:var(--green-bg);border:1px solid var(--green-bd);border-radius:20px;padding:3px 9px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--green);text-transform:uppercase}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pdot 1.8s ease-in-out infinite}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+.nav-right{display:flex;align-items:center;gap:12px}
+#clock{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.5px}
+.btn-sm{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:500;transition:all .2s}
+.btn-sm:hover{border-color:var(--blue-bd);color:var(--blue);background:var(--blue-bg)}
+.btn-sm svg{transition:transform .4s}
+.btn-sm:hover svg{transform:rotate(180deg)}
+
+/* ─── TAB BAR ─── */
+.tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;position:sticky;top:56px;z-index:99}
+.tab-btn{padding:0 18px;height:44px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;text-transform:uppercase}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-badge{background:var(--orange);color:#000;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700;display:none}
+
+/* ─── LAYOUT ─── */
+main{position:relative;z-index:1;padding:24px 28px 48px;max-width:1400px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── STATUS BAR ─── */
+.status-bar{display:flex;align-items:center;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:5px 11px;font-size:11px;color:var(--text2);font-weight:500}
+.chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-g{background:var(--green);box-shadow:0 0 5px var(--green)}
+.dot-a{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+.dot-r{background:var(--red);box-shadow:0 0 5px var(--red)}
+.spacer{flex:1}
+.ts{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+/* ─── SECTION LABEL ─── */
+.sec{display:flex;align-items:center;gap:12px;margin:28px 0 14px}
+.sec:first-child{margin-top:0}
+.sec-lbl{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.sec-line{flex:1;height:1px;background:var(--border)}
+
+/* ─── KPI GRID ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:18px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;cursor:default}
+.kpi:hover{border-color:var(--border2);transform:translateY(-1px)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.g::after{background:linear-gradient(90deg,var(--green) 0%,transparent 60%)}
+.kpi.b::after{background:linear-gradient(90deg,var(--blue) 0%,transparent 60%)}
+.kpi.p::after{background:linear-gradient(90deg,var(--purple) 0%,transparent 60%)}
+.kpi.a::after{background:linear-gradient(90deg,var(--amber) 0%,transparent 60%)}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+.kpi-val{font-size:32px;font-weight:700;color:var(--text);line-height:1;margin-bottom:6px;letter-spacing:-1px}
+.kpi-chg{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;margin-bottom:6px}
+.cup{color:var(--green)}.cdn{color:var(--red)}.cne{color:var(--text3)}
+.kpi-note{font-size:10px;color:var(--text3);line-height:1.5;border-top:1px solid var(--border);padding-top:8px;margin-top:2px}
+
+/* ─── DASHBOARD GRID ─── */
+.dg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}
+
+/* ─── CARD ─── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.card-title{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.card-body{padding:16px}
+.card-tight{padding:12px 16px}
+
+/* ─── BADGES ─── */
+.badge{font-size:10px;font-weight:600;letter-spacing:.5px;padding:2px 8px;border-radius:20px;text-transform:uppercase;font-family:'JetBrains Mono',monospace}
+.bg{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+.bb{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd)}
+.bp{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd)}
+.ba{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd)}
+.br{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)}
+.bt{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-bd)}
+.bo{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd)}
+
+/* ─── CHART ─── */
+.chart-wrap{position:relative;width:100%}
+.h160{height:160px}.h190{height:190px}.h220{height:220px}
+.leg{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.leg-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* ─── EVENT LIST ─── */
+.ev-list{display:flex;flex-direction:column;gap:7px}
+.ev-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;display:flex;align-items:center;gap:10px;transition:border-color .15s}
+.ev-item:hover{border-color:var(--border2)}
+.ev-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ev-info{flex:1;min-width:0}
+.ev-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-desc{font-size:10px;color:var(--text3);margin-top:1px}
+.ev-bar{height:2px;background:var(--bg5);border-radius:2px;margin-top:4px;overflow:hidden}
+.ev-fill{height:100%;border-radius:2px}
+.ev-ct{font-size:13px;font-weight:700;color:var(--text2);font-family:'JetBrains Mono',monospace;flex-shrink:0}
+
+/* ─── HEALTH GRID ─── */
+.hg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hi{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.hi-val{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px}
+.hi-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.hi-sub{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4}
+
+/* ─── RELEASE LIST ─── */
+.rel-list{display:flex;flex-direction:column;gap:8px}
+.rel-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px;display:flex;align-items:center;gap:11px}
+.rel-item:hover{border-color:var(--border2)}
+.rel-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rel-info{flex:1}
+.rel-ver{font-size:12px;font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace}
+.rel-date{font-size:10px;color:var(--text3);margin-top:1px}
+
+/* ─── INSIGHT BOX ─── */
+.ib{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-top:10px}
+.ir{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px}
+.ir:last-child{margin-bottom:0}
+.id{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.it{font-size:11px;color:var(--text2);line-height:1.55}
+.it strong{color:var(--text);font-weight:600}
+
+/* ─── DONUT ─── */
+.donut-wrap{position:relative}
+.donut-ctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-v{font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.donut-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:1px;font-family:'JetBrains Mono',monospace}
+
+/* ─── CONTENT CALENDAR ─── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-title{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;letter-spacing:-0.5px}
+.cal-btns{display:flex;gap:6px}
+.c-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 11px;border-radius:var(--r);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;transition:all .15s}
+.c-btn:hover{border-color:var(--blue-bd);color:var(--blue)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:20px}
+.cal-dh{text-align:center;padding:5px 0;font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;color:var(--text3);letter-spacing:1px}
+.cal-day{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);min-height:76px;padding:6px;transition:border-color .15s}
+.cal-day.empty{background:transparent;border-color:transparent}
+.cal-day.today{border-color:var(--blue)}
+.cal-day.today .dn{color:var(--blue)}
+.dn{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:3px}
+.dp{display:flex;flex-direction:column;gap:2px}
+.dpill{border-radius:3px;padding:2px 4px;font-size:9px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .15s}
+.dpill:hover{opacity:.7}
+.tw{background:var(--blue-bg);color:var(--blue);border-left:2px solid var(--blue)}
+.ts-pill{background:var(--orange-bg);color:var(--orange);border-left:2px solid var(--orange)}
+.tv{background:var(--purple-bg);color:var(--purple);border-left:2px solid var(--purple)}
+.tb{background:var(--green-bg);color:var(--green);border-left:2px solid var(--green)}
+.s-posted{opacity:1}.s-scheduled{opacity:.9}.s-pending{opacity:.7}.s-draft,.s-idea{opacity:.45}
+
+/* ─── POSTS TABLE ─── */
+.ptable{display:flex;flex-direction:column;gap:5px}
+.prow{display:grid;grid-template-columns:80px 120px 1fr 100px 80px 100px;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:9px 13px;transition:border-color .15s}
+.prow:hover{border-color:var(--border2)}
+.prow.phdr{background:transparent;border-color:transparent;padding-bottom:1px}
+.phdr .pc{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)}
+.pc-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)}
+.type-bdg{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.pc-title{font-weight:500;color:var(--text);font-size:12px}
+.pc-dim{color:var(--text2);font-size:11px}
+.pc-faint{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.sbdg{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+
+/* ─── BLOG QUEUE ─── */
+.bq-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.bq-mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:14px 16px}
+.bq-mt{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12px;margin-bottom:7px}
+.bq-mi{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--text2);margin-bottom:3px}
+.bq-md{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.bq-hdr{display:grid;grid-template-columns:24px 52px 82px 1fr 100px 130px 90px 80px;gap:8px;padding:3px 13px 5px;font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)}
+.bq-row{display:grid;grid-template-columns:24px 52px 82px 1fr 100px 130px 90px 80px;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px;transition:border-color .15s;cursor:grab}
+.bq-row:hover{border-color:var(--border2)}
+.bq-row.dragging{opacity:.4;border-color:var(--blue);cursor:grabbing}
+.bq-row.idea-row{border-left:2px solid var(--orange)}
+.bq-row.approved-row{border-left:2px solid var(--green)}
+.drag-h{color:var(--text3);font-size:13px;user-select:none;text-align:center}
+.bq-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)}
+.bq-dt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)}
+.topic-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;background:var(--green-bg);color:var(--green)}
+.bq-src{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.bq-title{font-weight:500;font-size:12px;color:var(--text)}
+.appr-btn{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600;transition:all .15s}
+.appr-btn:hover{background:var(--green);color:#000}
+.unappr-btn{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.del-btn{background:transparent;border:1px solid var(--border);color:var(--text3);padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10px}
+.del-btn:hover{border-color:var(--red);color:var(--red)}
+.act-btns{display:flex;gap:3px}
+.add-btn{background:var(--green);color:#000;border:none;padding:6px 14px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;cursor:pointer;transition:opacity .15s}
+.add-btn:hover{opacity:.85}
+
+/* ─── AGENTS & WORKFLOWS ─── */
+.agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.agent-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:16px;transition:border-color .2s,transform .15s;cursor:default}
+.agent-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.agent-icon{font-size:24px;margin-bottom:10px}
+.agent-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.agent-status{display:flex;align-items:center;gap:5px;margin-bottom:8px}
+.agent-desc{font-size:11px;color:var(--text2);line-height:1.55;margin-bottom:10px}
+.agent-triggers{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.7}
+.wf-list{display:flex;flex-direction:column;gap:8px}
+.wf-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:border-color .15s}
+.wf-item:hover{border-color:var(--border2)}
+.wf-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.wf-info{flex:1}
+.wf-name{font-size:12px;font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace;margin-bottom:3px}
+.wf-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:5px}
+.wf-path{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.wf-badge{flex-shrink:0;align-self:flex-start;margin-top:1px}
+
+/* ─── QUICK LINKS ─── */
+.link-list{display:flex;flex-direction:column;gap:7px}
+.link-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px;display:flex;align-items:center;gap:10px;text-decoration:none;transition:border-color .15s,background .15s;cursor:pointer}
+.link-item:hover{border-color:var(--border2);background:var(--bg4)}
+.link-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.link-info{flex:1}
+.link-name{font-size:12px;font-weight:500;color:var(--text)}
+.link-desc{font-size:10px;color:var(--text3);margin-top:1px}
+.link-arrow{font-size:11px;color:var(--text3)}
+
+/* ─── PIPELINE STATE ─── */
+.pipe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}
+.pipe-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:16px}
+.pipe-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.pipe-row{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.5}
+.pipe-dot{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.schedule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.sc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:14px 16px}
+.sc-day{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;margin-bottom:7px}
+.sc-item{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--text2);margin-bottom:3px}
+.sc-dot{width:4px;height:4px;border-radius:50%;margin-top:4px;flex-shrink:0}
+
+/* ─── MODAL ─── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rl);padding:24px;width:500px;max-height:80vh;overflow-y:auto}
+.modal h3{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text)}
+.ml{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;letter-spacing:.5px}
+.modal input,.modal textarea,.modal select{width:100%;background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:var(--r);font-family:'Inter',sans-serif;font-size:12px;margin-bottom:10px;outline:none;transition:border-color .15s}
+.modal input:focus,.modal textarea:focus,.modal select:focus{border-color:var(--blue)}
+.modal textarea{min-height:65px;resize:vertical}
+.modal-btns{display:flex;gap:7px;justify-content:flex-end;margin-top:4px}
+.btn-cancel{background:transparent;border:1px solid var(--border2);color:var(--text2);padding:6px 13px;border-radius:var(--r);cursor:pointer;font-size:12px}
+.btn-save{background:var(--blue);border:none;color:#fff;padding:6px 14px;border-radius:var(--r);cursor:pointer;font-weight:600;font-size:12px}
+
+/* ─── STATS ROW ─── */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.stat-c{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:14px 16px}
+.stat-l{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:5px}
+.stat-v{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:-1px}
+.stat-s{font-size:10px;color:var(--text2);margin-top:2px}
+
+/* ─── FOOTER ─── */
+footer{text-align:center;padding:24px 28px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+footer a{color:var(--text3);text-decoration:none}
+footer a:hover{color:var(--text2)}
+
+@keyframes pulsate{0%,100%{opacity:1}50%{opacity:.3}}
+.pulse{animation:pulsate 1.5s ease-in-out infinite}
+
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.s2{grid-column:span 2}.agent-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){main{padding:16px 14px 36px}nav{padding:0 14px}.tab-bar{padding:0 14px;overflow-x:auto}.kpi-grid{grid-template-columns:1fr 1fr}.dg{grid-template-columns:1fr}.s2{grid-column:span 1}.agent-grid{grid-template-columns:1fr}}
+/* ─── AUTH GATE ─── */
+#auth-gate{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
+.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:36px 40px;width:360px;text-align:center}
+.auth-logo{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;letter-spacing:4px;color:var(--text);text-transform:uppercase;margin-bottom:4px}
+.auth-logo span{color:var(--blue)}
+.auth-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:28px}
+.auth-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:11px 14px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;transition:border-color .2s}
+.auth-input:focus{border-color:var(--blue)}
+.auth-btn{width:100%;background:var(--blue);border:none;color:#fff;padding:11px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:opacity .15s}
+.auth-btn:hover{opacity:.85}
+.auth-err{font-size:11px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-top:8px;height:16px}
+#app-shell{display:none}
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <div class="auth-logo">On<span>Track</span></div>
+    <div class="auth-sub">Control Centre · Private</div>
+    <input class="auth-input" id="auth-input" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
+    <button class="auth-btn" onclick="checkAuth()">Unlock</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- APP SHELL (hidden until auth) -->
+<div id="app-shell">
+
+<nav>
+  <div class="nav-left">
+    <div class="logo">On<span>Track</span></div>
+    <div class="nav-div"></div>
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <span style="font-size:11px;color:var(--text3)">Control Centre</span>
+  </div>
+  <div class="nav-right">
+    <div id="clock">–</div>
+    <button class="btn-sm" onclick="window.location.reload()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+  </div>
+</nav>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <div class="tab-btn active" onclick="switchTab('metrics')">📊 App Metrics</div>
+  <div class="tab-btn" onclick="switchTab('content')">📅 Content</div>
+  <div class="tab-btn" onclick="switchTab('blog')">✍️ Blog Queue <span class="tab-badge" id="blog-badge"></span></div>
+  <div class="tab-btn" onclick="switchTab('agents')">🤖 Agents</div>
+  <div class="tab-btn" onclick="switchTab('links')">🔗 Quick Links</div>
+</div>
+
+<main>
+
+<!-- ═══════════════════ TAB: APP METRICS ═══════════════════ -->
+<div class="tab-panel active" id="tab-metrics">
+
+  <div class="status-bar">
+    <div class="chip"><div class="chip-dot dot-g"></div>Sentry — 0 open issues</div>
+    <div class="chip"><div class="chip-dot dot-g"></div>PostHog — tracking live</div>
+    <div class="chip"><div class="chip-dot dot-g"></div>v1.5.3 (build 4) — live</div>
+    <div class="chip"><div class="chip-dot dot-a"></div>Avg session time ↓48% vs last week</div>
+    <div class="spacer"></div>
+    <div class="ts" id="lastUpdated">Data as of: –</div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">This week vs last week</div><div class="sec-line"></div></div>
+  <div class="kpi-grid">
+    <div class="kpi g" id="kpi-users"><div class="kpi-lbl">Unique Visitors</div><div class="kpi-val">10</div><div class="kpi-chg cup">▲ +11%</div><div class="kpi-note">Different people who used the app. Each counted once no matter how many times they returned.</div></div>
+    <div class="kpi b" id="kpi-events"><div class="kpi-lbl">Total Events</div><div class="kpi-val">1,486</div><div class="kpi-chg cup">▲ +196%</div><div class="kpi-note">Every tap, screen view, and action across all users. Up 3× = users doing a lot more inside the app.</div></div>
+    <div class="kpi p" id="kpi-sessions"><div class="kpi-lbl">Sessions</div><div class="kpi-val">79</div><div class="kpi-chg cup">▲ +427%</div><div class="kpi-note">Times the app was opened and used. Up 5× = users returning much more often.</div></div>
+    <div class="kpi a"><div class="kpi-lbl">Avg Session Time</div><div class="kpi-val">2:39</div><div class="kpi-chg cdn">▼ −48%</div><div class="kpi-note">Time per visit on average. More sessions but shorter. Worth watching as users scale.</div></div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">Activity — last 7 days</div><div class="sec-line"></div></div>
+  <div class="dg">
+    <div class="card s2">
+      <div class="card-hd"><div class="card-title">Daily app activity</div><span class="badge bb">PostHog</span></div>
+      <div class="card-body">
+        <div class="leg"><div class="leg-item"><div class="leg-sq" style="background:#4d9eff"></div>Total events</div><div class="leg-item"><div class="leg-sq" style="background:#00e87a;opacity:.8"></div>App opens</div></div>
+        <div class="chart-wrap h190"><canvas id="eventsChart"></canvas></div>
+        <div class="ib"><div class="ir"><div class="id" style="background:var(--blue)"></div><div class="it"><strong>Big spike Apr 28</strong> — 439 events vs ~150 average. Check if a build shipped, TestFlight link was shared, or outreach went out that day.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">App health</div><span class="badge bg">All clear</span></div>
+      <div class="card-body">
+        <div class="hg">
+          <div class="hi"><div class="hi-val" style="color:var(--green)">0</div><div class="hi-lbl">Crashes</div><div class="hi-sub">Clean in Sentry 🎉</div></div>
+          <div class="hi"><div class="hi-val" style="color:var(--green)">0</div><div class="hi-lbl">Issues</div><div class="hi-sub">Zero in prod</div></div>
+          <div class="hi"><div class="hi-val" id="hi-rage" style="color:var(--amber)">15</div><div class="hi-lbl">Rage Taps</div><div class="hi-sub">No response taps</div></div>
+          <div class="hi"><div class="hi-val" id="hi-onboarded" style="color:var(--blue)">9</div><div class="hi-lbl">Onboarded</div><div class="hi-sub">Finished setup</div></div>
+          <div class="hi"><div class="hi-val" id="hi-checkins" style="color:var(--purple)">23</div><div class="hi-lbl">Check-ins</div><div class="hi-sub">Core feature</div></div>
+          <div class="hi"><div class="hi-val" id="hi-rsvps" style="color:var(--teal)">6</div><div class="hi-lbl">RSVPs</div><div class="hi-sub">Session sign-ups</div></div>
+        </div>
+        <div class="ib"><div class="ir"><div class="id" style="background:var(--amber)"></div><div class="it"><strong>15 rage taps</strong> — users tapping something that isn't responding. Check PostHog session recordings to identify the screen.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">What users are doing</div><div class="sec-line"></div></div>
+  <div class="dg">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Top actions this week</div><span class="badge bp">PostHog</span></div>
+      <div class="card-tight"><div class="ev-list" id="eventList"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">App opens per day</div><span class="badge bt">PostHog</span></div>
+      <div class="card-body">
+        <div class="chart-wrap h220"><canvas id="sessionsChart"></canvas></div>
+        <div class="ib"><div class="ir"><div class="id" style="background:var(--teal)"></div><div class="it"><strong>Apr 28 = best day</strong> — 26 opens, double the daily average. Same-day event spike confirms one trigger drove everything.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Event type breakdown</div><span class="badge bb">PostHog</span></div>
+      <div class="card-body">
+        <div class="chart-wrap h160 donut-wrap"><canvas id="donutChart"></canvas><div class="donut-ctr"><div class="donut-v">1,486</div><div class="donut-l">events</div></div></div>
+        <div class="leg" style="margin-top:12px;flex-wrap:wrap;gap:7px">
+          <div class="leg-item"><div class="leg-sq" style="background:#4d9eff"></div>Screen views (77%)</div>
+          <div class="leg-item"><div class="leg-sq" style="background:#00e87a"></div>App opens (7%)</div>
+          <div class="leg-item"><div class="leg-sq" style="background:#a78bfa"></div>Check-ins (2%)</div>
+          <div class="leg-item"><div class="leg-sq" style="background:#ffaa00"></div>Rage taps (1%)</div>
+        </div>
+        <div class="ib"><div class="ir"><div class="id" style="background:var(--blue)"></div><div class="it">Most activity is <strong>navigation</strong>. Core actions like check-ins are healthy but a small slice — that ratio will flip as user count grows.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">Sentry — releases &amp; stability</div><div class="sec-line"></div></div>
+  <div class="dg">
+    <div class="card s2">
+      <div class="card-hd"><div class="card-title">Recent builds shipped</div><span class="badge bg">Sentry</span></div>
+      <div class="card-body">
+        <div class="rel-list">
+          <div class="rel-item"><div class="rel-dot" style="background:var(--green);box-shadow:0 0 7px var(--green)"></div><div class="rel-info"><div class="rel-ver">com.blakeMatt.OnTrack@1.5.3 (build 4)</div><div class="rel-date">Shipped 27 Apr 2026 — current production build</div></div><span class="badge bg">0 new issues</span></div>
+          <div class="rel-item"><div class="rel-dot" style="background:var(--teal)"></div><div class="rel-info"><div class="rel-ver">com.blakeMatt.OnTrack@1.5.2 (build 6)</div><div class="rel-date">Shipped 24 Apr 2026</div></div><span class="badge bg">0 new issues</span></div>
+          <div class="rel-item"><div class="rel-dot" style="background:var(--blue)"></div><div class="rel-info"><div class="rel-ver">com.blakeMatt.OnTrack@1.5.2 (build 5)</div><div class="rel-date">Shipped 24 Apr 2026</div></div><span class="badge bg">0 new issues</span></div>
+          <div class="rel-item"><div class="rel-dot" style="background:var(--text3)"></div><div class="rel-info"><div class="rel-ver">com.blakeMatt.OnTrack@1.5.1 (build 4)</div><div class="rel-date">Shipped 24 Apr 2026</div></div><span class="badge bg">0 new issues</span></div>
+        </div>
+        <div class="ib">
+          <div class="ir"><div class="id" style="background:var(--green)"></div><div class="it"><strong>Every release is clean.</strong> Zero new issues across all 4 recent builds. Sentry auto-detects new crashes on every ship.</div></div>
+          <div class="ir"><div class="id" style="background:var(--text3)"></div><div class="it">4 builds in 3 days (24–27 Apr) = fast iteration velocity. Good sign for early-stage development pace.</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="flex:1">
+        <div class="card-hd"><div class="card-title">Pipeline status</div><span class="badge" id="pipe-badge" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)">Idle</span></div>
+        <div class="card-body" id="pipeStatus">
+          <div class="ir"><div class="id" style="background:var(--green)"></div><div class="it"><strong>Content state:</strong> Week 3 · Monday · ready to generate</div></div>
+          <div class="ir"><div class="id" style="background:var(--text3)"></div><div class="it"><strong>Last approved:</strong> Week 2 Saturday — Magnesium Glycinate (scheduled Sun May 3, 7:30am AEST)</div></div>
+          <div class="ir"><div class="id" style="background:var(--green)"></div><div class="it"><strong>Scheduling bug:</strong> Fixed 2026-05-02 · Daemon restarted ✅</div></div>
+          <div class="ir"><div class="id" style="background:var(--amber)"></div><div class="it"><strong>APNs secrets:</strong> Supabase Edge Function deployed — needs APNS_PRIVATE_KEY, APNS_KEY_ID, APNS_TEAM_ID in Supabase Secrets</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════ TAB: CONTENT CALENDAR ═══════════════════ -->
+<div class="tab-panel" id="tab-content">
+  <div class="cal-nav">
+    <div class="cal-title" id="calTitle">May 2026</div>
+    <div class="cal-btns">
+      <button class="c-btn" onclick="prevMonth()">← Prev</button>
+      <button class="c-btn" onclick="goToday()">Today</button>
+      <button class="c-btn" onclick="nextMonth()">Next →</button>
+    </div>
+  </div>
+
+  <div class="cal-grid" id="calGrid">
+    <div class="cal-dh">Mon</div><div class="cal-dh">Tue</div><div class="cal-dh">Wed</div>
+    <div class="cal-dh">Thu</div><div class="cal-dh">Fri</div><div class="cal-dh">Sat</div><div class="cal-dh">Sun</div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">All Posts — sorted by date</div><div class="sec-line"></div><div class="ts" style="white-space:nowrap">Blog posts shown when approved</div></div>
+  <div class="stats-row" id="postStatsRow"></div>
+  <div class="prow phdr">
+    <div class="pc">Date</div><div class="pc">Type</div><div class="pc">Title</div>
+    <div class="pc">Series</div><div class="pc">Platforms</div><div class="pc">Status</div>
+  </div>
+  <div class="ptable" id="postList"></div>
+</div>
+
+<!-- ═══════════════════ TAB: BLOG QUEUE ═══════════════════ -->
+<div class="tab-panel" id="tab-blog">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600">Blog Queue <span style="color:var(--text3);font-size:11px;font-weight:400"> · 2× per week · drag to reorder · approve to lock in</span></div>
+    <button class="add-btn" onclick="openBlogModal()">+ Add Idea</button>
+  </div>
+
+  <div class="bq-meta">
+    <div class="bq-mc" style="border-color:var(--green-bd)">
+      <div class="bq-mt" style="color:var(--green)">Publication</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--green)"></div>Tuesday + Thursday · 8:30am AEST</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--green)"></div>Push notification to all app users on publish</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--green)"></div>Edge Function: blog-post-notify ✅ deployed</div>
+    </div>
+    <div class="bq-mc">
+      <div class="bq-mt">Sources</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--blue)"></div>peptide-db.com — 101 peptides, 741 refs</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--orange)"></div>peptidedosingprotocols.com — 36 citation-backed guides</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--text3)"></div>PubMed / clinical trials cited inline + footer</div>
+    </div>
+    <div class="bq-mc">
+      <div class="bq-mt">Format</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--purple)"></div>800–1200 words · citations inline + sources footer</div>
+      <div class="bq-mi"><div class="bq-md" style="background:var(--purple)"></div>App Store CTA at end of every post</div>
+      <div class="bq-mi" style="color:var(--red)"><div class="bq-md" style="background:var(--red)"></div>No peptide sourcing advice — ever</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:7px;margin-bottom:12px;align-items:center;font-size:11px;color:var(--text2)">
+    <div class="pulse" style="width:5px;height:5px;border-radius:50%;background:var(--orange)"></div>
+    <span id="ideaLabel"></span>
+    <span style="color:var(--text3)"> · Orange = awaiting approval · Green = approved for production</span>
+  </div>
+
+  <div class="bq-hdr"><div></div><div>#</div><div>Pub Date</div><div>Title</div><div>Topic</div><div>Sources</div><div>Status</div><div>Actions</div></div>
+  <div id="blogList" style="display:flex;flex-direction:column;gap:3px"></div>
+</div>
+
+<!-- ═══════════════════ TAB: AGENTS & WORKFLOWS ═══════════════════ -->
+<div class="tab-panel" id="tab-agents">
+
+  <div class="sec"><div class="sec-lbl">Active Agents</div><div class="sec-line"></div></div>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <div class="agent-icon">🤖</div>
+      <div class="agent-name">Jarvis</div>
+      <div class="agent-status"><div class="chip-dot dot-g" style="width:5px;height:5px"></div><span style="font-size:10px;color:var(--green)">Active — launchd persistent</span></div>
+      <div class="agent-desc">Telegram bot. Handles CC control, alter round-trips, feature check DMs, and the Jarvis implement pipeline. Boots CC immediately on <code style="font-size:10px;color:var(--blue)">implement &lt;id&gt;</code> messages.</div>
+      <div class="agent-triggers">Script: ~/Brain/.../scripts/jarvis_bot.py<br>Plist: com.matt.jarvis<br>Triggers: any Telegram message → check both pending JSON files first</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">📋</div>
+      <div class="agent-name">Content Approval Daemon</div>
+      <div class="agent-status"><div class="chip-dot dot-g" style="width:5px;height:5px"></div><span style="font-size:10px;color:var(--green)">Scheduled — 21:00 AEST daily</span></div>
+      <div class="agent-desc">Posts written + video approval cards to #content-approval. Reads content_day.txt, parses CONTENT_SERIES_30DAY.md, generates carousel slides via quote_card.py, pre-uploads to Post Bridge, posts Block Kit card to Slack.</div>
+      <div class="agent-triggers">Script: content_approval_daemon.sh<br>Plist: com.matt.content-approval-daemon<br>State: content_day.txt + pending_approval.json</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">⚡</div>
+      <div class="agent-name">Approval Webhook</div>
+      <div class="agent-status"><div class="chip-dot dot-g" style="width:5px;height:5px"></div><span style="font-size:10px;color:var(--green)">Active — Slack Socket Mode</span></div>
+      <div class="agent-desc">Bolt Socket Mode handler. Processes Approve/Reject/Alter buttons from Slack. Approve → Post Bridge at next 7:30am AEST (bug fixed ✅). Alter → Telegram DM to Matt for edits.</div>
+      <div class="agent-triggers">Script: approval_webhook.py<br>Plist: com.matt.approval-webhook (KeepAlive: true)<br>Fix: tomorrow 7:30am AEST if approved after 7:30am</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">🔬</div>
+      <div class="agent-name">Features Check (CC Routine)</div>
+      <div class="agent-status"><div class="chip-dot dot-a" style="width:5px;height:5px"></div><span style="font-size:10px;color:var(--amber)">Active — 9am AEST daily</span></div>
+      <div class="agent-desc">Runs every morning via Claude Code. Uses SDK messages.create with web_search to scan Anthropic model updates. Rates each HIGH/MEDIUM/LOW for OnTrack relevance. DMs Matt on Telegram with results.</div>
+      <div class="agent-triggers">State: features_check_state.json<br>Output: pending_implementations.json<br>Trigger: implement &lt;id&gt; on Telegram → Jarvis boots CC</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">📊</div>
+      <div class="agent-name">PostHog Daily Report</div>
+      <div class="agent-status"><div class="chip-dot dot-a" style="width:5px;height:5px"></div><span style="font-size:10px;color:var(--amber)">Active — 8am AEST daily</span></div>
+      <div class="agent-desc">Fetches PostHog metrics for the last 7 days. Parses unique visitors, sessions, events, and rage taps. Writes posthog-daily-report.log. Data feeds this dashboard's App Metrics tab.</div>
+      <div class="agent-triggers">Script: posthog_daily_report.py<br>Log: posthog-daily-report.log<br>Project: 390657</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">🧠</div>
+      <div class="agent-name">Brain Updater</div>
+      <div class="agent-status"><div class="chip-dot dot-g" style="width:5px;height:5px"></div><span style="font-size:10px;color:var(--green)">Auto-triggered on implement</span></div>
+      <div class="agent-desc">Fires after every Jarvis implement completes. Updates ONTRACK_HUB.md, PIPELINE_RUNBOOK.md (model_update), SESSION_LOG.md (code_change), or TOOLKIT.md (install_command). Always appends to IMPLEMENTATION_LOG.md.</div>
+      <div class="agent-triggers">Script: brain_updater.py<br>Dispatch: per implementation_type field<br>Audit: IMPLEMENTATION_LOG.md</div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">Key Workflows</div><div class="sec-line"></div></div>
+  <div class="dg">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="wf-item">
+        <div class="wf-icon" style="background:var(--blue-bg)">📝</div>
+        <div class="wf-info">
+          <div class="wf-name">Written Content Flow</div>
+          <div class="wf-desc">Daemon reads CONTENT_SERIES_30DAY.md → generates quote card → uploads to Post Bridge → posts Block Kit card to #content-approval → you Approve/Reject/Alter → webhook dispatches to 6 platforms at 7:30am AEST.</div>
+          <div class="wf-path">State: content_day.txt → pending_approval.json → {} (cleared on approve)</div>
+        </div>
+        <span class="badge bb wf-badge">Mon/Wed/Sat</span>
+      </div>
+      <div class="wf-item">
+        <div class="wf-icon" style="background:var(--purple-bg)">🎬</div>
+        <div class="wf-info">
+          <div class="wf-name">Video Content Flow</div>
+          <div class="wf-desc">Add mp4 to video_queue.json → daemon posts preview + Block Kit card → Approve uploads mp4 to Post Bridge → schedules to 6 platforms at 7pm AEST.</div>
+          <div class="wf-path">State: video_queue.json → pending_video_approval.json</div>
+        </div>
+        <span class="badge bp wf-badge">Ad hoc</span>
+      </div>
+      <div class="wf-item">
+        <div class="wf-icon" style="background:var(--orange-bg)">✏️</div>
+        <div class="wf-info">
+          <div class="wf-name">Alter Round-Trip</div>
+          <div class="wf-desc">Click Alter in Slack → Jarvis DMs you on Telegram with the current post → reply with edit instructions → Jarvis rewrites and reposts a fresh 3-button card to #content-approval.</div>
+          <div class="wf-path">Scripts: alter_roundtrip.py / alter_video_roundtrip.py</div>
+        </div>
+        <span class="badge bo wf-badge">On demand</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="wf-item">
+        <div class="wf-icon" style="background:var(--teal-bg)">⚙️</div>
+        <div class="wf-info">
+          <div class="wf-name">Jarvis Implement Pipeline</div>
+          <div class="wf-desc">8am features check populates pending_implementations.json → DM Matt with HIGH/MEDIUM/LOW items → reply "implement &lt;id&gt;" on Telegram → Jarvis spawns CC subprocess → CC makes changes → brain_updater commits to Brain.</div>
+          <div class="wf-path">Timeout: 600s · Single active impl at a time · Audit: IMPLEMENTATION_LOG.md</div>
+        </div>
+        <span class="badge bt wf-badge">Autonomous</span>
+      </div>
+      <div class="wf-item">
+        <div class="wf-icon" style="background:var(--green-bg)">📱</div>
+        <div class="wf-info">
+          <div class="wf-name">Blog → App Notification</div>
+          <div class="wf-desc">Blog post published in Supabase (is_published = true) → Database Webhook fires → blog-post-notify Edge Function → fetches all profiles.push_token → sends APNs push to every registered device.</div>
+          <div class="wf-path">Edge Function: blog-post-notify (deployed ✅) · Needs: APNS_PRIVATE_KEY + APNS_KEY_ID + APNS_TEAM_ID in Supabase Secrets</div>
+        </div>
+        <span class="badge bg wf-badge">Auto on publish</span>
+      </div>
+      <div class="wf-item">
+        <div class="wf-icon" style="background:var(--red-bg)">🛡</div>
+        <div class="wf-info">
+          <div class="wf-name">Crash → Sentry Pipeline</div>
+          <div class="wf-desc">iOS app crash → Sentry SDK captures + symbolicated stack trace → Sentry dashboard → PostHog daily report captures error count → appears in App Metrics tab health grid.</div>
+          <div class="wf-path">Sentry DSN: Info.plist key SentryDSN · PostHog project: 390657</div>
+        </div>
+        <span class="badge br wf-badge">Automatic</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">Posting Schedule Map</div><div class="sec-line"></div></div>
+  <div class="schedule-grid">
+    <div class="sc-card" style="border-color:var(--blue-bd)"><div class="sc-day" style="color:var(--blue)">Mon + Wed</div><div class="sc-item"><div class="sc-dot" style="background:var(--blue)"></div>Weekly Focus carousel · 7:30am AEST</div><div class="sc-item"><div class="sc-dot" style="background:var(--text3)"></div>All 6 accounts (IG, X, TikTok, FB, LinkedIn, Threads)</div></div>
+    <div class="sc-card" style="border-color:var(--orange-bd)"><div class="sc-day" style="color:var(--orange)">Saturday</div><div class="sc-item"><div class="sc-dot" style="background:var(--orange)"></div>Supplement Spotlight carousel · 7:30am AEST</div><div class="sc-item"><div class="sc-dot" style="background:var(--text3)"></div>Max 6 slides (fixed ✅)</div></div>
+    <div class="sc-card" style="border-color:var(--green-bd)"><div class="sc-day" style="color:var(--green)">Tue + Thu</div><div class="sc-item"><div class="sc-dot" style="background:var(--green)"></div>Blog post · 8:30am AEST · ontrack-focus.com/blog</div><div class="sc-item"><div class="sc-dot" style="background:var(--green)"></div>Push notification on publish</div></div>
+    <div class="sc-card" style="border-color:var(--purple-bd)"><div class="sc-day" style="color:var(--purple)">Videos (ad hoc)</div><div class="sc-item"><div class="sc-dot" style="background:var(--purple)"></div>When approved · 7pm AEST</div><div class="sc-item"><div class="sc-dot" style="background:var(--text3)"></div>TikTok, IG, X primary platforms</div></div>
+    <div class="sc-card"><div class="sc-day">Approval Window</div><div class="sc-item"><div class="sc-dot" style="background:var(--orange)"></div>Cards arrive 9pm AEST night before</div><div class="sc-item" style="color:var(--green)"><div class="sc-dot" style="background:var(--green)"></div>Approve any time → always schedules correctly ✅</div></div>
+    <div class="sc-card" style="border-color:var(--amber-bd)"><div class="sc-day" style="color:var(--amber)">Pending Action</div><div class="sc-item"><div class="sc-dot" style="background:var(--amber)"></div>Supabase → Settings → Edge Functions → Secrets</div><div class="sc-item"><div class="sc-dot" style="background:var(--text3)"></div>Add APNS_PRIVATE_KEY, APNS_KEY_ID, APNS_TEAM_ID</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB: QUICK LINKS ═══════════════════ -->
+<div class="tab-panel" id="tab-links">
+  <div class="dg">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Analytics</div></div>
+      <div class="card-body">
+        <div class="link-list">
+          <a class="link-item" href="https://us.posthog.com/project/390657/web" target="_blank"><div class="link-icon" style="background:var(--blue-bg)">📊</div><div class="link-info"><div class="link-name">PostHog Web Analytics</div><div class="link-desc">Full analytics dashboard</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://us.posthog.com/project/390657/replay" target="_blank"><div class="link-icon" style="background:var(--purple-bg)">🎬</div><div class="link-info"><div class="link-name">Session Recordings</div><div class="link-desc">Watch real user sessions — rage tap investigation</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://us.posthog.com/project/390657/insights" target="_blank"><div class="link-icon" style="background:var(--teal-bg)">💡</div><div class="link-info"><div class="link-name">PostHog Insights</div><div class="link-desc">Custom queries, funnels, retention</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://us.posthog.com/project/390657/error_tracking" target="_blank"><div class="link-icon" style="background:var(--amber-bg)">🔍</div><div class="link-info"><div class="link-name">PostHog Error Tracking</div><div class="link-desc">Frontend error logs</div></div><div class="link-arrow">↗</div></a>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">App & Infrastructure</div></div>
+      <div class="card-body">
+        <div class="link-list">
+          <a class="link-item" href="https://ontrack-focus.sentry.io" target="_blank"><div class="link-icon" style="background:var(--red-bg)">🛡</div><div class="link-info"><div class="link-name">Sentry</div><div class="link-desc">Crash & error monitoring</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://appstoreconnect.apple.com/apps/6760957657" target="_blank"><div class="link-icon" style="background:var(--blue-bg)">🍎</div><div class="link-info"><div class="link-name">App Store Connect</div><div class="link-desc">App ID 6760957657 · v1.5 live</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://supabase.com/dashboard/project/wqkisslixduowewuaiae" target="_blank"><div class="link-icon" style="background:var(--green-bg)">🗄</div><div class="link-info"><div class="link-name">Supabase Dashboard</div><div class="link-desc">Ref: wqkisslixduowewuaiae</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://supabase.com/dashboard/project/wqkisslixduowewuaiae/settings/functions" target="_blank"><div class="link-icon" style="background:var(--amber-bg)">🔑</div><div class="link-info"><div class="link-name">Supabase Secrets ⚠️</div><div class="link-desc">Add APNS secrets here to enable blog push notifs</div></div><div class="link-arrow">↗</div></a>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Content & Marketing</div></div>
+      <div class="card-body">
+        <div class="link-list">
+          <a class="link-item" href="https://app.slack.com/client/T0ATNU04Q1H/C0ATT8B8EA2" target="_blank"><div class="link-icon" style="background:var(--purple-bg)">💬</div><div class="link-info"><div class="link-name">Slack #content-approval</div><div class="link-desc">Approve, reject, alter content cards</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://ontrack-focus.com" target="_blank"><div class="link-icon" style="background:var(--teal-bg)">🌐</div><div class="link-info"><div class="link-name">ontrack-focus.com</div><div class="link-desc">Marketing site — Netlify</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://ontrack-focus.com/blog" target="_blank"><div class="link-icon" style="background:var(--green-bg)">✍️</div><div class="link-info"><div class="link-name">Blog</div><div class="link-desc">ontrack-focus.com/blog — pending deploy</div></div><div class="link-arrow">↗</div></a>
+          <a class="link-item" href="https://app.post-bridge.com" target="_blank"><div class="link-icon" style="background:var(--blue-bg)">📡</div><div class="link-info"><div class="link-name">Post Bridge</div><div class="link-desc">Scheduled social posts — all 7 accounts</div></div><div class="link-arrow">↗</div></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><div class="sec-lbl">Pending Actions</div><div class="sec-line"></div></div>
+  <div class="dg">
+    <div class="card s3">
+      <div class="card-hd"><div class="card-title">Open items requiring action</div></div>
+      <div class="card-body">
+        <div class="ib" style="margin-top:0">
+          <div class="ir"><div class="id" style="background:var(--red)"></div><div class="it"><strong>APNs secrets:</strong> Add APNS_PRIVATE_KEY, APNS_KEY_ID, APNS_TEAM_ID to Supabase Edge Function Secrets. Without these, blog push notifications won't deliver. <a href="https://supabase.com/dashboard/project/wqkisslixduowewuaiae/settings/functions" target="_blank" style="color:var(--blue)">Open Supabase Secrets →</a></div></div>
+          <div class="ir"><div class="id" style="background:var(--amber)"></div><div class="it"><strong>Blog page on Netlify:</strong> blog.html built and ready. Need to find ~/ontrack-website, copy blog.html, add anon key, add Blog nav link, push to deploy. Run Claude Code prompt from yesterday's session.</div></div>
+          <div class="ir"><div class="id" style="background:var(--amber)"></div><div class="it"><strong>Supabase blog_posts table:</strong> Migration SQL is written. Needs to be run against project wqkisslixduowewuaiae. Run the Claude Code prompt from yesterday's session.</div></div>
+          <div class="ir"><div class="id" style="background:var(--amber)"></div><div class="it"><strong>Push notification audit:</strong> Group message, friend request, and friend acceptance notifications are not triggering server-side. Need Supabase Edge Functions for these 3 triggers. Step 3 in the plan.</div></div>
+          <div class="ir"><div class="id" style="background:var(--text3)"></div><div class="it"><strong>APNs end-to-end test with Jess:</strong> Confirm push token is saved to profiles, send a test notification, verify delivery. Required before push-dependent features ship.</div></div>
+          <div class="ir"><div class="id" style="background:var(--text3)"></div><div class="it"><strong>Website CTA button:</strong> ontrack-focus.com still points to TestFlight URL. Needs to swap to App Store URL: https://apps.apple.com/app/id6760957657</div></div>
+          <div class="ir"><div class="id" style="background:var(--text3)"></div><div class="it"><strong>Git commits:</strong> Only ~2 commits across the entire OnTrack iOS project. Add a proper commit after each build to track history.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</main>
+
+<footer>OnTrack Control Centre &nbsp;·&nbsp; <a href="https://posthog.com" target="_blank">PostHog</a> · <a href="https://sentry.io" target="_blank">Sentry</a> · <a href="https://supabase.com" target="_blank">Supabase</a> &nbsp;·&nbsp; Last refreshed: <span id="footerTime">–</span></footer>
+
+<!-- BLOG MODAL -->
+<div class="modal-bg" id="blogModal">
+  <div class="modal">
+    <h3>Add Blog Idea</h3>
+    <div class="ml">Title</div><input type="text" id="bTitle" placeholder="e.g. BPC-157: What the Research Actually Shows">
+    <div class="ml">Topic</div>
+    <select id="bTopic"><option>Peptides</option><option>Supplements</option><option>Sleep</option><option>Recovery</option><option>Mental Health</option><option>Habits</option><option>Nutrition</option><option>Training</option></select>
+    <div class="ml">Sources</div><input type="text" id="bSources" placeholder="peptide-db.com, peptidedosingprotocols.com, PubMed">
+    <div class="ml">Brief / Angle</div><textarea id="bNotes" placeholder="Key points, angle, target reader, linked social content..."></textarea>
+    <div class="ml">Target Pub Date</div><input type="date" id="bDate">
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeBlogModal()">Cancel</button><button class="btn-save" onclick="saveBlogPost()">Add to Queue</button></div>
+  </div>
+</div>
+
+<script>
+// ─── AUTH ───
+// Password is hashed — never stored in plain text.
+// To change: run btoa(encodeURIComponent('yourpassword')) in browser console and update HASH below.
+// Current password hash (SHA-256 via SubtleCrypto):
+const HASH = 'e93f082a1c67b5b4ca071f67231aea9ab6c13c673b297780c4b3b87ad6feeb95';
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function checkAuth() {
+  const val = document.getElementById('auth-input').value;
+  const h = await sha256(val);
+  if (h === HASH) {
+    sessionStorage.setItem('ot_auth', h);
+    document.getElementById('auth-gate').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'block';
+    renderCalendar(); renderPostList(); renderBlogList(); fetchLive();
+  } else {
+    const errEl = document.getElementById('auth-err');
+    errEl.textContent = 'Incorrect password';
+    document.getElementById('auth-input').value = '';
+    document.getElementById('auth-input').focus();
+    setTimeout(() => errEl.textContent = '', 2500);
+  }
+}
+// Allow Enter key
+document.getElementById('auth-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkAuth(); });
+// Check if already authenticated this session
+(async () => {
+  const stored = sessionStorage.getItem('ot_auth');
+  if (stored && stored === HASH) {
+    document.getElementById('auth-gate').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'block';
+    renderCalendar(); renderPostList(); renderBlogList(); fetchLive();
+  }
+})();
+
+// ─── CONFIG ───
+const PROXY = 'https://wqkisslixduowewuaiae.supabase.co/functions/v1/dashboard-proxy'
+
+// ─── LIVE DATA FETCH ───
+async function fetchLive() {
+  // Show loading state on metrics tab
+  const loadingCards = document.querySelectorAll('.kpi-val');
+  loadingCards.forEach(el => { if (el.textContent !== '–') el.dataset.original = el.textContent; el.textContent = '…'; });
+
+  try {
+    const [metrics, health] = await Promise.all([
+      fetch(`${PROXY}?path=metrics`).then(r => r.json()),
+      fetch(`${PROXY}?path=health`).then(r => r.json()),
+    ]);
+
+    if (!metrics.error) {
+      // KPIs
+      const kpis = [
+        { sel: '#kpi-users',   val: metrics.kpis.unique_users },
+        { sel: '#kpi-events',  val: metrics.kpis.total_events },
+        { sel: '#kpi-sessions',val: metrics.kpis.sessions },
+      ];
+      kpis.forEach(({sel, val}) => {
+        const card = document.querySelector(sel);
+        if (!card) return;
+        const valEl = card.querySelector('.kpi-val');
+        const chgEl = card.querySelector('.kpi-chg');
+        if (valEl) valEl.textContent = val.value.toLocaleString();
+        if (chgEl && val.pct !== null) {
+          const up = val.pct >= 0;
+          chgEl.className = 'kpi-chg ' + (up ? 'cup' : 'cdn');
+          chgEl.textContent = (up ? '▲ +' : '▼ ') + val.pct + '%';
+        }
+      });
+
+      // Daily chart data
+      if (metrics.daily && metrics.daily.length > 0) {
+        const days = metrics.daily.map(r => {
+          const d = new Date(r[0]);
+          return d.toLocaleDateString('en-AU', {day:'numeric', month:'short'});
+        });
+        const evs = metrics.daily.map(r => Number(r[1]) || 0);
+        const ops = metrics.daily.map(r => Number(r[2]) || 0);
+        updateCharts(days, evs, ops);
+      }
+    }
+
+    if (!health.error) {
+      // Health grid
+      const hmap = {
+        '#hi-rage':      health.rage_taps,
+        '#hi-checkins':  health.checkins,
+        '#hi-onboarded': health.onboarded,
+        '#hi-rsvps':     health.rsvps,
+        '#hi-users':     health.unique_users,
+      };
+      Object.entries(hmap).forEach(([sel, val]) => {
+        const el = document.querySelector(sel);
+        if (el) el.textContent = val;
+      });
+    }
+
+    // Pipeline state
+    fetch(`${PROXY}?path=pipeline`).then(r => r.json()).then(p => {
+      if (p.error) return;
+      const cd = p.contentDay;
+      const pa = p.pendingApproval;
+      const el = document.getElementById('pipeStatus');
+      if (!el) return;
+      const hasPending = pa && pa.week;
+      el.innerHTML = `
+        <div class="ir"><div class="id" style="background:var(--${hasPending ? 'amber' : 'green'})"></div>
+          <div class="it"><strong>Content state:</strong> Week ${cd.week ?? '?'} · ${cd.day ?? '?'} · ${hasPending ? 'pending approval in Slack' : 'ready to generate'}</div></div>
+        ${hasPending ? `<div class="ir"><div class="id" style="background:var(--orange)"></div><div class="it"><strong>Pending:</strong> Week ${pa.week} Saturday — ${pa.topic} · <a href="https://app.slack.com/client/T0ATNU04Q1H/C0ATT8B8EA2" target="_blank" style="color:var(--blue)">Review in Slack →</a></div></div>` : ''}
+        <div class="ir"><div class="id" style="background:var(--green)"></div><div class="it"><strong>Scheduling bug:</strong> Fixed 2026-05-02 · Daemon restarted ✅</div></div>
+        <div class="ir"><div class="id" style="background:var(--amber)"></div><div class="it"><strong>APNs secrets:</strong> Needs APNS_PRIVATE_KEY, APNS_KEY_ID, APNS_TEAM_ID in Supabase Secrets</div></div>`;
+    }).catch(() => {});
+
+    // Blog posts from Supabase
+    fetch(`${PROXY}?path=blog`).then(r => r.json()).then(b => {
+      if (b.error || !b.posts) return;
+      mergeLiveBlogPosts(b.posts);
+    }).catch(() => {});
+
+    document.getElementById('lastUpdated').textContent = 'Live · as of ' + new Date().toLocaleString('en-AU', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+    document.getElementById('pipe-badge').textContent = 'Live';
+    document.getElementById('pipe-badge').style.cssText = 'background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)';
+
+  } catch (err) {
+    console.warn('[dashboard] fetch failed, running on cached data:', err);
+    // Restore original values if fetch failed
+    document.querySelectorAll('.kpi-val').forEach(el => {
+      if (el.dataset.original) el.textContent = el.dataset.original;
+    });
+    document.getElementById('pipe-badge').textContent = 'Cached';
+    document.getElementById('pipe-badge').style.cssText = 'background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd)';
+  }
+}
+
+function mergeLiveBlogPosts(livePosts) {
+  // Merge Supabase blog_posts into BLOG array
+  // Live posts with is_published=true -> published, else check created state
+  livePosts.forEach(lp => {
+    const existing = BLOG.find(b => b.title === lp.title);
+    const status = lp.is_published ? 'published' : lp.published_at ? 'scheduled' : 'approved';
+    if (existing) {
+      existing.status = status;
+      existing.date = (lp.published_at || lp.created_at || '').slice(0, 10);
+    } else {
+      BLOG.push({
+        id: BLOG.length + 100,
+        title: lp.title,
+        topic: lp.topic || 'General',
+        sources: Array.isArray(lp.sources) ? lp.sources.map(s => s.text || s).join(', ') : (lp.sources || ''),
+        status,
+        date: (lp.published_at || lp.created_at || '').slice(0, 10),
+        notes: lp.excerpt || '',
+      });
+    }
+  });
+  renderBlogList();
+  renderCalendar();
+  renderPostList();
+}
+
+let eventsChartInst, sessionsChartInst;
+function updateCharts(days, evs, ops) {
+  // Update existing Chart.js instances with live data
+  const ec = eventsChartInst;
+  const sc = sessionsChartInst;
+  if (ec) {
+    ec.data.labels = days;
+    ec.data.datasets[0].data = evs;
+    ec.data.datasets[0].backgroundColor = evs.map(v => v === Math.max(...evs) ? 'rgba(77,158,255,0.85)' : 'rgba(77,158,255,0.35)');
+    ec.data.datasets[1].data = ops;
+    ec.data.datasets[1].pointRadius = ops.map(v => v === Math.max(...ops) ? 6 : 3);
+    ec.update('none');
+  }
+  if (sc) {
+    sc.data.labels = days;
+    sc.data.datasets[0].data = ops;
+    sc.data.datasets[0].pointRadius = ops.map(v => v === Math.max(...ops) ? 7 : 4);
+    sc.update('none');
+  }
+}
+
+// ─── CLOCK ───
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('lastUpdated').textContent='Data as of: '+n.toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('footerTime').textContent=n.toLocaleString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+tick();setInterval(tick,1000);
+
+// ─── TABS ───
+function switchTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{if(b.getAttribute('onclick')===`switchTab('${name}')`)b.classList.add('active');});
+  if(name==='content'){renderCalendar();renderPostList();}
+  if(name==='blog'){renderBlogList();}
+}
+
+// ─── CHART DEFAULTS ───
+const MONO="'JetBrains Mono',ui-monospace,monospace";
+Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.color='rgba(180,180,210,0.65)';
+const GC='rgba(255,255,255,0.04)';
+const TT={backgroundColor:'rgba(8,8,16,0.96)',borderColor:'rgba(255,255,255,0.10)',borderWidth:1,titleColor:'rgba(240,240,255,0.95)',bodyColor:'rgba(180,180,210,0.72)',padding:10,cornerRadius:8,titleFont:{family:MONO,size:11},bodyFont:{size:11}};
+
+const DAYS=['Apr 24','Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1'];
+const EV=[245,188,139,184,439,103,97,91];
+const OP=[10,15,11,12,26,11,8,7];
+
+// Events chart
+eventsChartInst = new Chart(document.getElementById('eventsChart'),{type:'bar',data:{labels:DAYS,datasets:[{label:'Total events',data:EV,backgroundColor:EV.map(v=>v===439?'rgba(77,158,255,0.85)':'rgba(77,158,255,0.35)'),borderColor:EV.map(v=>v===439?'rgba(77,158,255,1)':'rgba(77,158,255,0.5)'),borderWidth:1,borderRadius:5,borderSkipped:false,yAxisID:'y'},{label:'App opens',data:OP,type:'line',borderColor:'rgba(0,232,122,0.75)',backgroundColor:'rgba(0,232,122,0.06)',pointBackgroundColor:OP.map(v=>v===26?'#00e87a':'rgba(0,232,122,0.7)'),pointBorderColor:'transparent',pointRadius:OP.map(v=>v===26?6:3),tension:0.45,fill:true,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:GC},ticks:{maxRotation:0}},y:{grid:{color:GC},position:'left'},y1:{grid:{display:false},ticks:{color:'rgba(0,232,122,0.5)'},position:'right',min:0,max:35}}}});
+
+// Sessions chart
+sessionsChartInst = new Chart(document.getElementById('sessionsChart'),{type:'line',data:{labels:DAYS,datasets:[{label:'App opens',data:OP,borderColor:'#2dd4bf',backgroundColor:(ctx)=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(45,212,191,0.18)');g.addColorStop(1,'rgba(45,212,191,0)');return g;},pointBackgroundColor:OP.map(v=>v===26?'#2dd4bf':'rgba(45,212,191,0.7)'),pointBorderColor:'transparent',pointRadius:OP.map(v=>v===26?7:4),tension:0.45,fill:true,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:{grid:{color:GC},ticks:{maxRotation:0}},y:{grid:{color:GC},min:0}}}});
+
+// Donut chart
+new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:['Screen views','App opens','Backgrounded','app_open','Check-ins','Rage taps','Installs','Other'],datasets:[{data:[1145,100,90,72,23,15,12,29],backgroundColor:['rgba(77,158,255,0.82)','rgba(0,232,122,0.78)','rgba(45,212,191,0.72)','rgba(0,232,122,0.45)','rgba(167,139,250,0.82)','rgba(255,170,0,0.82)','rgba(255,51,85,0.65)','rgba(85,85,112,0.55)'],borderColor:'rgba(8,8,16,0.9)',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:(c)=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return ' '+c.label+': '+c.parsed.toLocaleString()+' ('+Math.round(c.parsed/t*100)+'%)';}}}}}});
+
+// Event list
+const EVENTS=[
+  {label:'Screen view',desc:'User navigated to a screen',count:1145,color:'#4d9eff',icon:'📱'},
+  {label:'App opened',desc:'User launched the app',count:100,color:'#00e87a',icon:'🚀'},
+  {label:'App backgrounded',desc:'User switched away',count:90,color:'#2dd4bf',icon:'⬇️'},
+  {label:'App open (alt)',desc:'Alt tracking event',count:72,color:'#00e87a',icon:'🔓'},
+  {label:'Check-in submitted',desc:'⭐ Core feature used',count:23,color:'#a78bfa',icon:'✅'},
+  {label:'Rage tap',desc:"⚠️ Tap with no response",count:15,color:'#ffaa00',icon:'⚡'},
+  {label:'App installed',desc:'New install detected',count:12,color:'#ff6b8a',icon:'📦'},
+  {label:'Onboarding done',desc:'New user finished setup',count:9,color:'#a78bfa',icon:'🎯'},
+  {label:'Session RSVP',desc:'User signed up for session',count:6,color:'#2dd4bf',icon:'📅'},
+];
+const mx=EVENTS[0].count;
+const el=document.getElementById('eventList');
+EVENTS.forEach(e=>{
+  const pct=Math.round(e.count/mx*100);
+  el.innerHTML+=`<div class="ev-item"><div class="ev-icon" style="background:${e.color}18">${e.icon}</div><div class="ev-info"><div class="ev-name">${e.label}</div><div class="ev-desc">${e.desc}</div><div class="ev-bar"><div class="ev-fill" style="width:${pct}%;background:${e.color}"></div></div></div><div class="ev-ct">${e.count.toLocaleString()}</div></div>`;
+});
+
+// ─── ALL POSTS DATA ───
+const POSTS=[
+  {date:'2026-04-28',type:'Weekly Focus',title:'Consistency, Pt 1: Why It Matters',topic:'W1 Mon',platforms:'All 6',status:'posted'},
+  {date:'2026-04-30',type:'Weekly Focus',title:'Consistency, Pt 2: How To Build It',topic:'W1 Wed',platforms:'All 6',status:'posted'},
+  {date:'2026-05-02',type:'Weekly Focus',title:'Consistency, Pt 3: Real Proof',topic:'W1 Fri',platforms:'All 6',status:'posted'},
+  {date:'2026-05-03',type:'Supplement Spotlight',title:'Creatine: The Basics Done Right',topic:'W1 Sat',platforms:'All 6',status:'posted'},
+  {date:'2026-04-22',type:'Video',title:'How-To: Habits Feature',topic:'App Demo',platforms:'TikTok/IG/X',status:'posted'},
+  {date:'2026-04-23',type:'Video',title:'How-To: Supplements Feature',topic:'App Demo',platforms:'TikTok/IG/X',status:'posted'},
+  {date:'2026-05-05',type:'Weekly Focus',title:'Sleep, Pt 1: Why It Matters',topic:'W2 Mon',platforms:'All 6',status:'posted'},
+  {date:'2026-05-07',type:'Weekly Focus',title:'Sleep, Pt 2: How To Fix It',topic:'W2 Wed',platforms:'All 6',status:'posted'},
+  {date:'2026-05-09',type:'Weekly Focus',title:'Sleep, Pt 3: Real Proof',topic:'W2 Fri',platforms:'All 6',status:'posted'},
+  {date:'2026-05-10',type:'Supplement Spotlight',title:'Magnesium Glycinate',topic:'W2 Sat',platforms:'All 6',status:'scheduled'},
+  {date:'2026-05-12',type:'Weekly Focus',title:'Accountability, Pt 1: Why It Matters',topic:'W3 Mon',platforms:'All 6',status:'draft'},
+  {date:'2026-05-14',type:'Weekly Focus',title:'Accountability, Pt 2: Build Systems',topic:'W3 Wed',platforms:'All 6',status:'draft'},
+  {date:'2026-05-16',type:'Weekly Focus',title:'Accountability, Pt 3: The Hard Part',topic:'W3 Fri',platforms:'All 6',status:'draft'},
+  {date:'2026-05-17',type:'Supplement Spotlight',title:'Omega-3 / Fish Oil',topic:'W3 Sat',platforms:'All 6',status:'draft'},
+  {date:'2026-05-19',type:'Weekly Focus',title:'Recovery, Pt 1: The Science',topic:'W4 Mon',platforms:'All 6',status:'draft'},
+  {date:'2026-05-21',type:'Weekly Focus',title:'Recovery, Pt 2: Active Recovery',topic:'W4 Wed',platforms:'All 6',status:'draft'},
+  {date:'2026-05-23',type:'Weekly Focus',title:'Recovery, Pt 3: Mental Recovery',topic:'W4 Fri',platforms:'All 6',status:'draft'},
+  {date:'2026-05-24',type:'Supplement Spotlight',title:'Vitamin D3 + K2',topic:'W4 Sat',platforms:'All 6',status:'draft'},
+  {date:'2026-05-26',type:'Weekly Focus',title:'Building Habits, Pt 1: The Framework',topic:'W5 Mon',platforms:'All 6',status:'draft'},
+  {date:'2026-05-28',type:'Weekly Focus',title:'Building Habits, Pt 2: Real Examples',topic:'W5 Wed',platforms:'All 6',status:'draft'},
+  {date:'2026-05-30',type:'Weekly Focus',title:'Building Habits, Pt 3: Advanced',topic:'W5 Fri',platforms:'All 6',status:'draft'},
+  {date:'2026-05-31',type:'Supplement Spotlight',title:'Ashwagandha',topic:'W5 Sat',platforms:'All 6',status:'draft'},
+];
+
+// ─── BLOG QUEUE ───
+let BLOG=[
+  {id:1,title:'BPC-157: What the Research Actually Shows',topic:'Peptides',sources:'peptide-db.com, peptidedosingprotocols.com',status:'idea',date:'2026-05-06',notes:'Mechanism, dosing, oral vs subQ debate. Educational only. No sourcing advice.'},
+  {id:2,title:'Why Accountability Beats Motivation Every Time',topic:'Habits',sources:'OnTrack data, PubMed',status:'idea',date:'2026-05-08',notes:'Mirror neurons, oxytocin, accountability loops. Tie to OnTrack Groups.'},
+  {id:3,title:"Creatine: The Most Studied Supplement You're Probably Underdosing",topic:'Supplements',sources:'peptide-db.com, PubMed',status:'idea',date:'2026-05-13',notes:'3–5g/day, loading myth, timing myth. Companion to W1 Sat Spotlight.'},
+  {id:4,title:'Sleep Debt is Real: What the Science Says',topic:'Sleep',sources:'PubMed, Walker lab',status:'idea',date:'2026-05-15',notes:'Cortisol, GH suppression, cognitive performance. Companion to W2 social series.'},
+  {id:5,title:'BPC-157 + TB-500: The Wolverine Stack Explained',topic:'Peptides',sources:'peptide-db.com, peptidedosingprotocols.com',status:'idea',date:'2026-05-20',notes:'Educational breakdown. No sourcing. Cite peptide-db + pdp Wolverine stack page.'},
+  {id:6,title:'How Group Training Changes Your Brain Chemistry',topic:'Mental Health',sources:'PubMed, neuroscience',status:'idea',date:'2026-05-22',notes:'Mirror neurons, oxytocin, accountability science. Tie to OnTrack Groups.'},
+  {id:7,title:'Magnesium: Why Form Matters More Than Dose',topic:'Supplements',sources:'peptide-db.com, clinical trials',status:'idea',date:'2026-05-27',notes:'Glycinate vs oxide vs citrate bioavailability. Companion to W2 Saturday Spotlight.'},
+  {id:8,title:'Retatrutide: The Triple Agonist Everyone Is Talking About',topic:'Peptides',sources:'peptidedosingprotocols.com, PubMed',status:'idea',date:'2026-05-29',notes:'GIP/GLP-1/glucagon triple agonist. Phase 2 data. No sourcing. Cite pdp.com/protocol/retatrutide.'},
+  {id:9,title:"GLP-1s and Muscle Loss: What Nobody Talks About",topic:'Peptides',sources:'peptidedosingprotocols.com, PubMed',status:'idea',date:'2026-06-03',notes:'Lean mass problem. Resistance training + protein counter-measures.'},
+  {id:10,title:'Ashwagandha: Does KSM-66 Actually Make a Difference?',topic:'Supplements',sources:'peptide-db.com, clinical trials',status:'idea',date:'2026-06-05',notes:'Standardised extract vs generic root powder. Cortisol, strength, testosterone data.'},
+  {id:11,title:'The 5am Crew: Why Early Training Sticks',topic:'Habits',sources:'98 Gym, PubMed',status:'idea',date:'2026-06-10',notes:'Morning cortisol window, habit timing, 98 Gym Port Macquarie angle. Founder tie-in.'},
+  {id:12,title:'TB-500: The Tissue Repair Peptide Explained',topic:'Peptides',sources:'peptide-db.com, peptidedosingprotocols.com',status:'idea',date:'2026-06-12',notes:'Thymosin Beta-4 mechanism, animal vs human evidence.'},
+];
+
+// ─── CALENDAR ───
+let CY=2026,CM=4;
+function allPosts(){
+  const bl=BLOG.filter(p=>p.status!=='idea'&&p.date).map(p=>({date:p.date,type:'Blog',title:p.title,status:p.status==='published'?'posted':p.status==='scheduled'?'scheduled':'draft'}));
+  return [...POSTS,...bl];
+}
+function renderCalendar(){
+  const g=document.getElementById('calGrid');
+  const hdrs=[...g.querySelectorAll('.cal-dh')];
+  g.innerHTML='';hdrs.forEach(h=>g.appendChild(h));
+  document.getElementById('calTitle').textContent=new Date(CY,CM,1).toLocaleString('en-AU',{month:'long',year:'numeric'});
+  const fd=new Date(CY,CM,1).getDay();
+  const dm=new Date(CY,CM+1,0).getDate();
+  const off=fd===0?6:fd-1;
+  const today=new Date();
+  for(let i=0;i<off;i++){const e=document.createElement('div');e.className='cal-day empty';g.appendChild(e);}
+  for(let d=1;d<=dm;d++){
+    const ds=`${CY}-${String(CM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isT=today.getFullYear()===CY&&today.getMonth()===CM&&today.getDate()===d;
+    const c=document.createElement('div');c.className='cal-day'+(isT?' today':'');
+    const dn=document.createElement('div');dn.className='dn';dn.textContent=d;c.appendChild(dn);
+    const dp=document.createElement('div');dp.className='dp';
+    allPosts().filter(p=>p.date===ds).forEach(p=>{
+      const pill=document.createElement('div');
+      const tc=p.type==='Weekly Focus'?'tw':p.type==='Supplement Spotlight'?'ts-pill':p.type==='Video'?'tv':'tb';
+      pill.className=`dpill ${tc} s-${p.status}`;
+      pill.textContent=p.title;pill.title=`${p.title} · ${p.status}`;
+      dp.appendChild(pill);
+    });
+    c.appendChild(dp);g.appendChild(c);
+  }
+}
+function prevMonth(){CM--;if(CM<0){CM=11;CY--;}renderCalendar();}
+function nextMonth(){CM++;if(CM>11){CM=0;CY++;}renderCalendar();}
+function goToday(){const n=new Date();CY=n.getFullYear();CM=n.getMonth();renderCalendar();}
+
+// ─── POST LIST ───
+function renderPostList(){
+  const all=[...POSTS,...BLOG.filter(p=>p.status!=='idea'&&p.date).map(p=>({date:p.date,type:'Blog',title:p.title,topic:p.topic,platforms:'Blog',status:p.status==='published'?'posted':p.status==='scheduled'?'scheduled':'draft'}))].sort((a,b)=>a.date.localeCompare(b.date));
+  const list=document.getElementById('postList');
+  list.innerHTML='';
+  const TC={'Weekly Focus':{bg:'var(--blue-bg)',c:'var(--blue)',l:'Weekly'},'Supplement Spotlight':{bg:'var(--orange-bg)',c:'var(--orange)',l:'Spotlight'},'Video':{bg:'var(--purple-bg)',c:'var(--purple)',l:'Video'},'Blog':{bg:'var(--green-bg)',c:'var(--green)',l:'Blog'}};
+  all.forEach(p=>{
+    const t=TC[p.type]||TC.Blog;
+    const sh={posted:'bg',scheduled:'bb',pending:'bo',draft:'',idea:''}[p.status]||'';
+    const sl={posted:'● Posted',scheduled:'● Sched.',pending:'● Pending',draft:'○ Draft',idea:'○ Idea'}[p.status]||'○ Draft';
+    const row=document.createElement('div');row.className='prow';
+    row.innerHTML=`<div class="pc pc-date">${p.date.slice(5).replace('-','/')}</div><div class="pc"><span class="type-bdg" style="background:${t.bg};color:${t.c}">${t.l}</span></div><div class="pc pc-title">${p.title}</div><div class="pc pc-dim">${p.topic||''}</div><div class="pc pc-faint">${p.platforms||''}</div><div class="pc"><span class="sbdg ${sh?'badge '+sh:''}">${sl}</span></div>`;
+    list.appendChild(row);
+  });
+  const posted=all.filter(p=>p.status==='posted').length;
+  const sched=all.filter(p=>p.status==='scheduled').length;
+  const blogs=all.filter(p=>p.type==='Blog').length;
+  const draft=all.filter(p=>p.status==='draft').length;
+  document.getElementById('postStatsRow').innerHTML=`
+    <div class="stat-c"><div class="stat-l">Total</div><div class="stat-v">${all.length}</div><div class="stat-s">planned</div></div>
+    <div class="stat-c"><div class="stat-l">Published</div><div class="stat-v" style="color:var(--green)">${posted}</div><div class="stat-s">live</div></div>
+    <div class="stat-c"><div class="stat-l">Scheduled</div><div class="stat-v" style="color:var(--blue)">${sched}</div><div class="stat-s">in Post Bridge</div></div>
+    <div class="stat-c"><div class="stat-l">Blog Posts</div><div class="stat-v" style="color:var(--green)">${blogs}</div><div class="stat-s">approved</div></div>
+    <div class="stat-c"><div class="stat-l">Draft</div><div class="stat-v" style="color:var(--text3)">${draft}</div><div class="stat-s">not generated</div></div>`;
+}
+
+// ─── BLOG QUEUE ───
+const SC={published:{bg:'var(--green-bg)',c:'var(--green)',l:'Published'},scheduled:{bg:'var(--blue-bg)',c:'var(--blue)',l:'Scheduled'},review:{bg:'var(--orange-bg)',c:'var(--orange)',l:'Review'},writing:{bg:'var(--purple-bg)',c:'var(--purple)',l:'Writing'},approved:{bg:'var(--green-bg)',c:'var(--green)',l:'Approved ✓'},idea:{bg:'rgba(255,255,255,.04)',c:'var(--text3)',l:'Idea'},draft:{bg:'rgba(255,255,255,.04)',c:'var(--text3)',l:'Draft'}};
+
+function updateBlogBadge(){
+  const n=BLOG.filter(p=>p.status==='idea').length;
+  const b=document.getElementById('blog-badge');
+  const l=document.getElementById('ideaLabel');
+  if(n>0){b.style.display='inline';b.textContent=n;if(l)l.textContent=`${n} post${n>1?'s':''} awaiting your approval`;}
+  else{b.style.display='none';if(l)l.textContent='All posts approved ✅';}
+}
+function approvePost(id){const p=BLOG.find(x=>x.id===id);if(p){p.status='approved';renderBlogList();renderCalendar();renderPostList();}}
+function unapprovePost(id){const p=BLOG.find(x=>x.id===id);if(p){p.status='idea';renderBlogList();renderCalendar();renderPostList();}}
+function deleteBlogPost(id){BLOG=BLOG.filter(p=>p.id!==id);renderBlogList();renderCalendar();renderPostList();}
+
+function renderBlogList(){
+  const list=document.getElementById('blogList');
+  list.innerHTML='';
+  BLOG.forEach((post,idx)=>{
+    const sc=SC[post.status]||SC.draft;
+    const isIdea=post.status==='idea';
+    const isApproved=post.status==='approved';
+    const row=document.createElement('div');
+    row.className=`bq-row${isIdea?' idea-row':isApproved?' approved-row':''}`;
+    row.draggable=true;row.dataset.idx=idx;
+    const acts=isIdea
+      ?`<div class="act-btns"><button class="appr-btn" onclick="approvePost(${post.id})">Approve</button><button class="del-btn" onclick="deleteBlogPost(${post.id})">✕</button></div>`
+      :`<div class="act-btns">${isApproved?`<button class="unappr-btn" onclick="unapprovePost(${post.id})">Undo</button>`:'<span style="color:var(--green);font-size:12px;font-weight:700">✓</span>'}<button class="del-btn" onclick="deleteBlogPost(${post.id})">✕</button></div>`;
+    row.innerHTML=`<div class="drag-h">⣿</div><div class="bq-num">${String(idx+1).padStart(2,'0')}</div><div class="bq-dt">${post.date?post.date.slice(5).replace('-','/'):'—'}</div><div class="bq-title" title="${post.notes||''}">${post.title}</div><div><span class="topic-tag">${post.topic}</span></div><div class="bq-src">${post.sources}</div><div><span style="background:${sc.bg};color:${sc.c};display:inline-flex;padding:2px 6px;border-radius:3px;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:700;text-transform:uppercase">${sc.l}</span></div>${acts}`;
+    row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',idx);row.classList.add('dragging');});
+    row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+    row.addEventListener('dragover',e=>e.preventDefault());
+    row.addEventListener('drop',e=>{e.preventDefault();const f=parseInt(e.dataTransfer.getData('text/plain'));const t=parseInt(row.dataset.idx);if(f!==t){const m=BLOG.splice(f,1)[0];BLOG.splice(t,0,m);renderBlogList();}});
+    list.appendChild(row);
+  });
+  updateBlogBadge();
+}
+
+// ─── MODAL ───
+function openBlogModal(){document.getElementById('blogModal').classList.add('open');}
+function closeBlogModal(){document.getElementById('blogModal').classList.remove('open');}
+function saveBlogPost(){
+  const title=document.getElementById('bTitle').value.trim();if(!title)return;
+  BLOG.push({id:Math.max(...BLOG.map(p=>p.id),0)+1,title,topic:document.getElementById('bTopic').value,sources:document.getElementById('bSources').value||'peptide-db.com, peptidedosingprotocols.com',status:'idea',date:document.getElementById('bDate').value,notes:document.getElementById('bNotes').value});
+  closeBlogModal();renderBlogList();renderCalendar();renderPostList();
+  ['bTitle','bSources','bNotes','bDate'].forEach(id=>document.getElementById(id).value='');
+}
+document.getElementById('blogModal').addEventListener('click',function(e){if(e.target===this)closeBlogModal();});
+
+// ─── INIT (called by auth on unlock) ───
+// renderCalendar(), renderPostList(), renderBlogList(), fetchLive()
+// are all called from checkAuth() — do NOT call them here at page load.
+</script>
+
+</div><!-- /#app-shell -->
+</body>
+</html>
