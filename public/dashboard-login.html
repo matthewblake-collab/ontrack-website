@@ -56,6 +56,8 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
 </div>
 
 <script>
+let _challenge = null;
+
 async function sendOtp() {
   const password = document.getElementById('pw-input').value;
   const btn = document.getElementById('pw-btn');
@@ -83,6 +85,9 @@ async function sendOtp() {
       return;
     }
 
+    const data = await res.json();
+    _challenge = data.challenge;
+
     // Advance to OTP step
     document.getElementById('step-password').classList.add('hidden');
     document.getElementById('step-otp').classList.remove('hidden');
@@ -106,6 +111,10 @@ async function verifyOtp() {
     errEl.textContent = 'Enter all 6 digits';
     return;
   }
+  if (!_challenge) {
+    errEl.textContent = 'Session expired — refresh and try again';
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Verifying…';
@@ -115,10 +124,15 @@ async function verifyOtp() {
     const res = await fetch('/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-      redirect: 'follow',
+      body: JSON.stringify({ token, challenge: _challenge }),
+      redirect: 'manual',
     });
 
+    if (res.status === 0 || res.type === 'opaqueredirect') {
+      // Edge function redirected — cookie is set, navigate
+      window.location.href = '/dashboard';
+      return;
+    }
     if (res.status === 401 || res.status === 400) {
       errEl.textContent = 'Invalid code — try again';
       document.getElementById('otp-input').value = '';
@@ -126,8 +140,7 @@ async function verifyOtp() {
       return;
     }
 
-    // The edge function sets the cookie and redirects — follow it
-    window.location.href = '/dashboard';
+    errEl.textContent = 'Unexpected error — try again';
 
   } catch {
     errEl.textContent = 'Network error — try again';

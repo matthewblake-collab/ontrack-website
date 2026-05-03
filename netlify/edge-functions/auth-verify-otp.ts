@@ -6,56 +6,86 @@ export default async function handler(request: Request) {
   }
 
   let otp: string;
+  let challenge: string;
   try {
-    ({ token: otp } = await request.json());
+    ({ token: otp, challenge } = await request.json());
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const phone = Deno.env.get("DASHBOARD_PHONE");
+  if (!challenge || !otp) {
+    return Response.json({ error: "Missing token or challenge" }, { status: 400 });
+  }
 
-  const res = await fetch(`${supabaseUrl}/auth/v1/verify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: supabaseAnonKey!,
-    },
-    body: JSON.stringify({ phone, token: otp, type: "sms" }),
-  });
+  const secret = Deno.env.get("SESSION_SECRET");
+  if (!secret) {
+    return Response.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
 
-  if (!res.ok) {
+  // Verify the challenge was signed by this server (prevents forged challenges)
+  const dotIndex = challenge.lastIndexOf(".");
+  if (dotIndex === -1) {
+    return Response.json({ error: "Invalid OTP" }, { status: 401 });
+  }
+  const payload = challenge.slice(0, dotIndex);
+  const sig = challenge.slice(dotIndex + 1);
+
+  const hmacKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+  const sigBytes = Uint8Array.from(atob(sig), (c) => c.charCodeAt(0));
+  const sigValid = await crypto.subtle.verify(
+    "HMAC",
+    hmacKey,
+    sigBytes,
+    new TextEncoder().encode(payload)
+  );
+  if (!sigValid) {
     return Response.json({ error: "Invalid OTP" }, { status: 401 });
   }
 
-  // Build HMAC-signed session token
-  const secret = Deno.env.get("SESSION_SECRET")!;
-  const exp = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
-  const data = btoa(JSON.stringify({ phone, exp }));
+  // Decode payload and check expiry
+  const { otpHash, exp } = JSON.parse(atob(payload));
+  if (Date.now() > exp) {
+    return Response.json({ error: "OTP expired" }, { status: 401 });
+  }
 
-  const key = await crypto.subtle.importKey(
+  // Verify the submitted OTP matches the hashed one in the challenge
+  const inputHashBuf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(otp + secret)
+  );
+  const inputHash = btoa(String.fromCharCode(...new Uint8Array(inputHashBuf)));
+  if (inputHash !== otpHash) {
+    return Response.json({ error: "Invalid OTP" }, { status: 401 });
+  }
+
+  // OTP verified — build 7-day session cookie
+  const phone = Deno.env.get("DASHBOARD_PHONE") ?? "dashboard";
+  const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const sessionData = btoa(JSON.stringify({ phone, exp: sessionExp }));
+
+  const sessionKey = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
   );
-
-  const sigBuffer = await crypto.subtle.sign(
+  const sessionSigBuf = await crypto.subtle.sign(
     "HMAC",
-    key,
-    new TextEncoder().encode(data)
+    sessionKey,
+    new TextEncoder().encode(sessionData)
   );
-  const signature = btoa(
-    String.fromCharCode(...new Uint8Array(sigBuffer))
-  );
-  const sessionToken = `${data}.${signature}`;
+  const sessionToken = `${sessionData}.${btoa(String.fromCharCode(...new Uint8Array(sessionSigBuf)))}`;
 
-  const maxAge = 7 * 24 * 3600;
   const headers = new Headers({
     Location: "/dashboard",
-    "Set-Cookie": `ot_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`,
+    "Set-Cookie": `ot_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${7 * 24 * 3600}`,
   });
 
   return new Response(null, { status: 302, headers });
