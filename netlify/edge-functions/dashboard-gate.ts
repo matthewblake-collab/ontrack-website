@@ -2,11 +2,23 @@ import type { Config, Context } from "@netlify/edge-functions";
 
 export default async function handler(request: Request, context: Context) {
   const sessionCookie = context.cookies.get("ot_session");
+  const hasCookie = !!sessionCookie;
+  console.log("[dashboard-gate] invoked", { hasCookie, url: request.url });
 
-  if (!sessionCookie || !(await validateSession(sessionCookie))) {
+  if (!sessionCookie) {
+    console.log("[dashboard-gate] no cookie → redirect to login");
     return Response.redirect(new URL("/dashboard-login", request.url));
   }
 
+  const valid = await validateSession(sessionCookie);
+  console.log("[dashboard-gate] session valid:", valid);
+
+  if (!valid) {
+    console.log("[dashboard-gate] invalid session → redirect to login");
+    return Response.redirect(new URL("/dashboard-login", request.url));
+  }
+
+  console.log("[dashboard-gate] PASS — serving dashboard");
   return context.next();
 }
 

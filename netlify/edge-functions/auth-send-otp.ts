@@ -12,16 +12,24 @@ export default async function handler(request: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  if (password !== Deno.env.get("DASHBOARD_PASSWORD")) {
+  console.log("[auth-send-otp] invoked");
+
+  const dashPw = Deno.env.get("DASHBOARD_PASSWORD");
+  console.log("[auth-send-otp] DASHBOARD_PASSWORD set:", !!dashPw);
+
+  if (password !== dashPw) {
+    console.log("[auth-send-otp] wrong password");
     return Response.json({ error: "Invalid password" }, { status: 401 });
   }
 
   const secret = Deno.env.get("SESSION_SECRET");
+  console.log("[auth-send-otp] SESSION_SECRET set:", !!secret);
   if (!secret) {
     return Response.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
   const testCode = Deno.env.get("OTP_TEST_CODE");
+  console.log("[auth-send-otp] OTP_TEST_CODE set:", !!testCode, "| test mode:", !!testCode);
 
   // In test mode: use fixed code. In production: generate random 6-digit OTP.
   const otp = testCode || Math.floor(100000 + Math.random() * 900000).toString();
@@ -65,6 +73,7 @@ export default async function handler(request: Request) {
     }
   }
 
+  console.log("[auth-send-otp] challenge built, returning ok:true");
   return Response.json({ ok: true, challenge });
 }
 

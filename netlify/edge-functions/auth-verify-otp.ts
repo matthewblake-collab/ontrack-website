@@ -13,11 +13,15 @@ export default async function handler(request: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  console.log("[auth-verify-otp] invoked", { hasChallenge: !!challenge, otpLength: otp?.length });
+
   if (!challenge || !otp) {
+    console.log("[auth-verify-otp] missing token or challenge");
     return Response.json({ error: "Missing token or challenge" }, { status: 400 });
   }
 
   const secret = Deno.env.get("SESSION_SECRET");
+  console.log("[auth-verify-otp] SESSION_SECRET set:", !!secret);
   if (!secret) {
     return Response.json({ error: "Server misconfiguration" }, { status: 500 });
   }
@@ -60,6 +64,7 @@ export default async function handler(request: Request) {
     new TextEncoder().encode(otp + secret)
   );
   const inputHash = btoa(String.fromCharCode(...new Uint8Array(inputHashBuf)));
+  console.log("[auth-verify-otp] sig valid:", sigValid, "| expired:", Date.now() > exp, "| otp match:", inputHash === otpHash);
   if (inputHash !== otpHash) {
     return Response.json({ error: "Invalid OTP" }, { status: 401 });
   }
