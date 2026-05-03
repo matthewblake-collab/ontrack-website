@@ -1,0 +1,26 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[edge_functions]]
+  function = "dashboard-gate"
+  path = "/dashboard"
+
+[[edge_functions]]
+  function = "auth-send-otp"
+  path = "/api/auth/send-otp"
+
+[[edge_functions]]
+  function = "auth-verify-otp"
+  path = "/api/auth/verify-otp"
+
+[[redirects]]
+  from = "/dashboard-login"
+  to = "/dashboard-login.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

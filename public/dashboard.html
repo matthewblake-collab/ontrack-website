@@ -11,7 +11,7 @@
 :root{
   --bg:#080810;--bg2:#0f0f1a;--bg3:#15151f;--bg4:#1c1c2a;--bg5:#222233;
   --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.10);--border3:rgba(255,255,255,0.16);
-  --text:rgba(240,240,255,0.95);--text2:rgba(180,180,210,0.72);--text3:rgba(120,120,155,0.55);
+  --text:rgba(240,240,255,0.95);--text2:rgba(255,255,255,0.90);--text3:rgba(255,255,255,0.65);
   --green:#00e87a;--green-bg:rgba(0,232,122,0.09);--green-bd:rgba(0,232,122,0.22);
   --red:#ff3355;--red-bg:rgba(255,51,85,0.09);--red-bd:rgba(255,51,85,0.22);
   --amber:#ffaa00;--amber-bg:rgba(255,170,0,0.09);--amber-bd:rgba(255,170,0,0.22);
@@ -289,34 +289,11 @@ footer a:hover{color:var(--text2)}
 
 @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.s2{grid-column:span 2}.agent-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){main{padding:16px 14px 36px}nav{padding:0 14px}.tab-bar{padding:0 14px;overflow-x:auto}.kpi-grid{grid-template-columns:1fr 1fr}.dg{grid-template-columns:1fr}.s2{grid-column:span 1}.agent-grid{grid-template-columns:1fr}}
-/* ─── AUTH GATE ─── */
-#auth-gate{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
-.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:36px 40px;width:360px;text-align:center}
-.auth-logo{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;letter-spacing:4px;color:var(--text);text-transform:uppercase;margin-bottom:4px}
-.auth-logo span{color:var(--blue)}
-.auth-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:28px}
-.auth-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:11px 14px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;transition:border-color .2s}
-.auth-input:focus{border-color:var(--blue)}
-.auth-btn{width:100%;background:var(--blue);border:none;color:#fff;padding:11px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:opacity .15s}
-.auth-btn:hover{opacity:.85}
-.auth-err{font-size:11px;color:var(--red);font-family:'JetBrains Mono',monospace;margin-top:8px;height:16px}
-#app-shell{display:none}
 </style>
 </head>
 <body>
 
-<!-- AUTH GATE -->
-<div id="auth-gate">
-  <div class="auth-box">
-    <div class="auth-logo">On<span>Track</span></div>
-    <div class="auth-sub">Control Centre · Private</div>
-    <input class="auth-input" id="auth-input" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
-    <button class="auth-btn" onclick="checkAuth()">Unlock</button>
-    <div class="auth-err" id="auth-err"></div>
-  </div>
-</div>
-
-<!-- APP SHELL (hidden until auth) -->
+<!-- APP SHELL -->
 <div id="app-shell">
 
 <nav>
@@ -714,43 +691,6 @@ footer a:hover{color:var(--text2)}
 </div>
 
 <script>
-// ─── AUTH ───
-// Password is hashed — never stored in plain text.
-// To change: run btoa(encodeURIComponent('yourpassword')) in browser console and update HASH below.
-// Current password hash (SHA-256 via SubtleCrypto):
-const HASH = 'e93f082a1c67b5b4ca071f67231aea9ab6c13c673b297780c4b3b87ad6feeb95';
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-}
-async function checkAuth() {
-  const val = document.getElementById('auth-input').value;
-  const h = await sha256(val);
-  if (h === HASH) {
-    sessionStorage.setItem('ot_auth', h);
-    document.getElementById('auth-gate').style.display = 'none';
-    document.getElementById('app-shell').style.display = 'block';
-    renderCalendar(); renderPostList(); renderBlogList(); fetchLive();
-  } else {
-    const errEl = document.getElementById('auth-err');
-    errEl.textContent = 'Incorrect password';
-    document.getElementById('auth-input').value = '';
-    document.getElementById('auth-input').focus();
-    setTimeout(() => errEl.textContent = '', 2500);
-  }
-}
-// Allow Enter key
-document.getElementById('auth-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkAuth(); });
-// Check if already authenticated this session
-(async () => {
-  const stored = sessionStorage.getItem('ot_auth');
-  if (stored && stored === HASH) {
-    document.getElementById('auth-gate').style.display = 'none';
-    document.getElementById('app-shell').style.display = 'block';
-    renderCalendar(); renderPostList(); renderBlogList(); fetchLive();
-  }
-})();
-
 // ─── CONFIG ───
 const PROXY = 'https://wqkisslixduowewuaiae.supabase.co/functions/v1/dashboard-proxy'
 
@@ -1108,9 +1048,8 @@ function saveBlogPost(){
 }
 document.getElementById('blogModal').addEventListener('click',function(e){if(e.target===this)closeBlogModal();});
 
-// ─── INIT (called by auth on unlock) ───
-// renderCalendar(), renderPostList(), renderBlogList(), fetchLive()
-// are all called from checkAuth() — do NOT call them here at page load.
+// ─── INIT ───
+renderCalendar(); renderPostList(); renderBlogList(); fetchLive();
 </script>
 
 </div><!-- /#app-shell -->

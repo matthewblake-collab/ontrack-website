@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnTrack — Control Centre</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080810;--bg2:#0f0f1a;--bg3:#15151f;
+  --border2:rgba(255,255,255,0.10);
+  --text:rgba(240,240,255,0.95);--text3:rgba(255,255,255,0.65);
+  --green:#00e87a;--green-bg:rgba(0,232,122,0.09);--green-bd:rgba(0,232,122,0.22);
+  --red:#ff3355;
+  --blue:#4d9eff;
+  --r:8px;--rl:16px;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(77,158,255,0.05) 0%,transparent 70%);pointer-events:none}
+.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:36px 40px;width:360px;text-align:center}
+.auth-logo{font-size:18px;font-weight:600;letter-spacing:4px;color:var(--text);text-transform:uppercase;margin-bottom:4px}
+.auth-logo span{color:var(--blue)}
+.auth-sub{font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:28px}
+.auth-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:11px 14px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;transition:border-color .2s}
+.auth-input:focus{border-color:var(--blue)}
+.auth-btn{width:100%;background:var(--blue);border:none;color:#fff;padding:11px;border-radius:var(--r);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:opacity .15s}
+.auth-btn:hover{opacity:.85}
+.auth-btn:disabled{opacity:.45;cursor:not-allowed}
+.auth-err{font-size:11px;color:var(--red);margin-top:8px;height:16px}
+.step{transition:opacity .2s}
+.step.hidden{display:none}
+.otp-hint{font-size:10px;color:var(--text3);margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="auth-box">
+  <div class="auth-logo">On<span>Track</span></div>
+  <div class="auth-sub" id="sub-text">Control Centre · Private</div>
+
+  <!-- Step 1: Password -->
+  <div id="step-password" class="step">
+    <input class="auth-input" id="pw-input" type="password" placeholder="••••••••" autocomplete="current-password" autofocus>
+    <button class="auth-btn" id="pw-btn" onclick="sendOtp()">Unlock</button>
+    <div class="auth-err" id="pw-err"></div>
+  </div>
+
+  <!-- Step 2: OTP -->
+  <div id="step-otp" class="step hidden">
+    <div class="otp-hint">Code sent to your mobile.<br>Enter the 6-digit code below.</div>
+    <input class="auth-input" id="otp-input" type="text" inputmode="numeric" maxlength="6" placeholder="_ _ _ _ _ _" autocomplete="one-time-code">
+    <button class="auth-btn" id="otp-btn" onclick="verifyOtp()">Verify</button>
+    <div class="auth-err" id="otp-err"></div>
+  </div>
+</div>
+
+<script>
+async function sendOtp() {
+  const password = document.getElementById('pw-input').value;
+  const btn = document.getElementById('pw-btn');
+  const errEl = document.getElementById('pw-err');
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+
+    if (res.status === 401) {
+      errEl.textContent = 'Incorrect password';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+      return;
+    }
+    if (!res.ok) {
+      errEl.textContent = 'Error sending code — try again';
+      return;
+    }
+
+    // Advance to OTP step
+    document.getElementById('step-password').classList.add('hidden');
+    document.getElementById('step-otp').classList.remove('hidden');
+    document.getElementById('sub-text').textContent = 'Two-factor verification';
+    document.getElementById('otp-input').focus();
+
+  } catch {
+    errEl.textContent = 'Network error — try again';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Unlock';
+  }
+}
+
+async function verifyOtp() {
+  const token = document.getElementById('otp-input').value.trim();
+  const btn = document.getElementById('otp-btn');
+  const errEl = document.getElementById('otp-err');
+
+  if (token.length < 6) {
+    errEl.textContent = 'Enter all 6 digits';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying…';
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+      redirect: 'follow',
+    });
+
+    if (res.status === 401 || res.status === 400) {
+      errEl.textContent = 'Invalid code — try again';
+      document.getElementById('otp-input').value = '';
+      document.getElementById('otp-input').focus();
+      return;
+    }
+
+    // The edge function sets the cookie and redirects — follow it
+    window.location.href = '/dashboard';
+
+  } catch {
+    errEl.textContent = 'Network error — try again';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Verify';
+  }
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
+document.getElementById('otp-input').addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
+</script>
+</body>
+</html>
