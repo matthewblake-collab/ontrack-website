@@ -24,3 +24,14 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Social analytics scheduled functions
+# 0 20 UTC = 6am AEST (7am AEDT during summer DST). Locked to AEST for consistency.
+[functions."instagram-fetch"]
+  schedule = "0 20 * * *"
+
+[functions."facebook-fetch"]
+  schedule = "0 20 * * *"
+
+[functions."threads-fetch"]
+  schedule = "0 20 * * *"
