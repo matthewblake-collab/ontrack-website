@@ -66,6 +66,11 @@ async function supabaseInsert(
   }
 }
 
+function isWrongTokenError(err?: MetaError): boolean {
+  if (!err) return false;
+  return !!err.message?.toLowerCase().includes("parse access token");
+}
+
 function isPermissionError(err?: MetaError): boolean {
   if (!err) return false;
   return (
@@ -78,12 +83,17 @@ function isPermissionError(err?: MetaError): boolean {
 }
 
 export const handler = async () => {
-  const TOKEN = process.env.META_ACCESS_TOKEN;
+  // F12: Threads requires its own OAuth-issued token — graph.threads.net rejects
+  // tokens minted by the Facebook app (different signing key). Source from
+  // THREADS_ACCESS_TOKEN, not META_ACCESS_TOKEN.
+  const TOKEN = process.env.THREADS_ACCESS_TOKEN;
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
-    console.error("[threads-fetch] Missing required env vars: META_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
+    console.error(
+      "[threads-fetch] Missing required env vars: THREADS_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"
+    );
     return { statusCode: 500, body: "Missing required env vars" };
   }
 
@@ -100,6 +110,17 @@ export const handler = async () => {
     };
 
     if (meData.error) {
+      if (isWrongTokenError(meData.error)) {
+        console.error(
+          `[threads-fetch] Wrong token type: ${meData.error.message}. ` +
+            "THREADS_ACCESS_TOKEN must be issued via the Threads OAuth flow (graph.threads.net), " +
+            "not the Facebook/Instagram Login flow. See MARKETING_HUB_PLAN §1.3."
+        );
+        return {
+          statusCode: 200,
+          body: `Threads token-type error: ${meData.error.message}. Issue a token via Threads OAuth.`,
+        };
+      }
       if (isPermissionError(meData.error)) {
         console.log(
           `[threads-fetch] Permission error during discovery: ${meData.error.message}. ` +
