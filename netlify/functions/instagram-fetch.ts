@@ -250,8 +250,14 @@ export const handler = async () => {
     );
     const acctInsightsData = (await acctInsightsResp.json()) as { data?: IGInsight[] };
 
-    const getAcct = (name: string): number =>
-      (acctInsightsData.data?.find((i) => i.name === name)?.values?.[0]?.value ?? 0);
+    const getAcct = (name: string): number => {
+      // v22: metric_type=total_value returns `total_value.value`. Fall back to
+      // legacy `values[0].value` shape for older metric responses.
+      const m = acctInsightsData.data?.find((i) => i.name === name) as
+        | { total_value?: { value?: number }; values?: { value?: number }[] }
+        | undefined;
+      return m?.total_value?.value ?? m?.values?.[0]?.value ?? 0;
+    };
 
     const summaryRow = {
       platform: "instagram",

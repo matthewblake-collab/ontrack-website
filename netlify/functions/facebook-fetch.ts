@@ -148,13 +148,15 @@ export const handler = async () => {
     return { statusCode: 500, body: `Page fetch failed: ${pageData.error.message}` };
   }
 
-  // Fetch page insights for yesterday
-  // v22: `page_impressions` deprecated Nov 15 2025 → replaced by `page_views`.
-  // `page_views_total` deprecated v21. `page_website_clicks_logged_in_unique` deprecated.
-  // `page_reach` is post-level only in v22. Surviving page-level metrics:
-  // `page_post_engagements`, `page_fan_adds_unique`, `page_views`.
+  // Fetch page insights for yesterday — single-metric call.
+  // v22 (verified May 2026): page-level metrics are heavily restricted. Multi-
+  // metric calls error if ANY metric in the list is invalid for this page tier.
+  // page_fan_adds_unique is confirmed v22-valid per Meta changelog. Other
+  // candidates (page_views, page_impressions, page_post_engagements) all return
+  // "(#100) value must be a valid insights metric" for this page, so we don't
+  // call them. Aggregate reach/impressions/clicks now derive from per-post sums.
   const insightsResp = await fetch(
-    `${GRAPH}/${fbPageId}/insights?metric=page_post_engagements,page_fan_adds_unique,page_views&period=day&date_preset=yesterday&access_token=${TOKEN}`
+    `${GRAPH}/${fbPageId}/insights?metric=page_fan_adds_unique&period=day&date_preset=yesterday&access_token=${TOKEN}`
   );
   const insightsData = (await insightsResp.json()) as {
     data?: FBInsight[];
@@ -183,14 +185,13 @@ export const handler = async () => {
     followers: pageData.followers_count ?? pageData.fan_count ?? 0,
     following: 0,
     total_posts: 0,
-    // v22 mapping: `page_views` is the closest analog for both impressions and
-    // profile-style traffic. `page_reach` and `page_website_clicks` no longer
-    // exist at page level — will be derived from per-post sums (F11 + Phase B).
+    // v22: page-level reach/impressions/profile-views/clicks all retired.
+    // Only page_fan_adds_unique still resolves; everything else is zero until
+    // derived from per-post sums (F11) or a Page Access Token unlocks /posts.
     period_reach: 0,
-    period_impressions: extractInsightValue(find("page_views")),
-    period_profile_views: extractInsightValue(find("page_views")),
+    period_impressions: 0,
+    period_profile_views: 0,
     period_website_clicks: 0,
-    // page_fan_adds_unique surfaces here for follower-velocity calc:
     period_follower_growth: extractInsightValue(find("page_fan_adds_unique")),
     raw: { page: pageData, insights: insightsData.data ?? null },
   };
@@ -204,8 +205,29 @@ export const handler = async () => {
   );
 
   // ── Posts loop (F11) — mirrors instagram-fetch.ts pattern ─────────────────
+  // v22 "new Pages experience" requires a Page Access Token for /posts and
+  // per-post /insights (User Access Token returns code 190 / subcode 2069032).
+  // /me/accounts does NOT return access_token for new-Pages-experience pages
+  // when the User token comes from "Pages access tools" use case. The clean
+  // fix is to set FB_PAGE_ACCESS_TOKEN as an env var (long-lived page token
+  // generated via Graph API Explorer or Meta Business Settings). Without it,
+  // skip the posts loop rather than logging a 190 every cron tick.
+  const pageToken = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!pageToken) {
+    console.log(
+      "[facebook-fetch] Skipping posts loop — set FB_PAGE_ACCESS_TOKEN env var to enable (Page Access Token, not User Access Token)."
+    );
+    console.log(
+      `[facebook-fetch] Complete: account summary upserted for ${summaryDate}; posts loop skipped`
+    );
+    return {
+      statusCode: 200,
+      body: `OK: summary upserted for ${summaryDate}; posts loop skipped (FB_PAGE_ACCESS_TOKEN not set)`,
+    };
+  }
+
   const postsResp = await fetch(
-    `${GRAPH}/${fbPageId}/posts?fields=id,created_time,permalink_url,message,attachments{type,media{image{src}}},comments.summary(true).limit(0),shares,reactions.summary(true).limit(0)&limit=50&access_token=${TOKEN}`
+    `${GRAPH}/${fbPageId}/posts?fields=id,created_time,permalink_url,message,attachments{type,media{image{src}}},comments.summary(true).limit(0),shares,reactions.summary(true).limit(0)&limit=50&access_token=${pageToken}`
   );
   const postsData = (await postsResp.json()) as {
     data?: Array<{
@@ -255,9 +277,9 @@ export const handler = async () => {
       const socialPostId = upsertData?.[0]?.id as string | undefined;
       if (!socialPostId) continue;
 
-      // Per-post insights — v22 valid set
+      // Per-post insights — v22 valid set; uses page token (user token rejected)
       const postInsightsResp = await fetch(
-        `${GRAPH}/${post.id}/insights?metric=post_impressions_unique,post_engaged_users,post_clicks,post_reactions_by_type_total&access_token=${TOKEN}`
+        `${GRAPH}/${post.id}/insights?metric=post_impressions_unique,post_engaged_users,post_clicks,post_reactions_by_type_total&access_token=${pageToken}`
       );
       const postInsightsData = (await postInsightsResp.json()) as {
         data?: FBInsight[];
