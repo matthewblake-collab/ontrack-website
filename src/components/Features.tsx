@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
-import ss_11_39_13 from '../assets/screenshots/ss_11_39_13.png'
-import ss_13_44_02 from '../assets/screenshots/ss_13_44_02.png'
-import ss_13_44_47 from '../assets/screenshots/ss_13_44_47.png'
-import ss_11_39_05 from '../assets/screenshots/ss_11_39_05.png'
-import ss_11_36_11 from '../assets/screenshots/ss_11_36_11.png'
+import ssHome from '../assets/screenshots/01_home_daily_actions.png'
+import ssGroups from '../assets/screenshots/03_group_detail.png'
+import ssSupplements from '../assets/screenshots/04_supplements_protocol.png'
+import ssProtocol from '../assets/screenshots/06_protocol_detail.png'
+import ssWellbeing from '../assets/screenshots/07_wellbeing.png'
+import ssProgress from '../assets/screenshots/08_progress.png'
 import xmasComp from '../assets/photos/xmas_comp_53.jpg'
 
 type Pill = { label: string; description: string }
@@ -30,9 +31,10 @@ const features: Feature[] = [
       { label: 'Sessions', description: 'Log your training sessions and mark attendance. Linked to your groups for shared accountability.' },
       { label: 'Supplements', description: 'See your full supplement stack for the day in one view. Tap to log each dose as you take it.' },
       { label: 'Check-in', description: 'Rate your sleep, energy, and wellbeing each day. Takes 10 seconds and builds your wellness timeline.' },
+      { label: 'Quick-Log FAB', description: 'Tap + to instantly log a supplement or workout. Pick from your stack, scan a barcode, or choose a workout type. Done in seconds.' },
     ],
     accent: '#e8ff47',
-    screenshot: ss_11_39_13,
+    screenshot: ssHome,
     alt: 'Daily Actions dashboard screen',
   },
   {
@@ -47,22 +49,39 @@ const features: Feature[] = [
       { label: 'Recovery Score', description: 'See how your sleep, energy and wellbeing combine into a simple daily score.' },
     ],
     accent: '#1a9e75',
-    screenshot: ss_13_44_02,
+    screenshot: ssWellbeing,
     alt: 'Wellbeing sleep chart and AI Wellness Insight screen',
   },
   {
     label: 'Supplements',
     title: 'Track your full supplement stack with a daily progress ring.',
     description:
-      'Build your complete supplement protocol — morning, pre/post workout, evening. Smart reminders, daily logging, and streak tracking keep your nutrition dialled.',
+      'Build your complete supplement protocol from a library of 70+ research-backed compounds. Smart reminders, daily logging, and streak tracking keep your nutrition dialled.',
     pills: [
       { label: 'Smart Reminders', description: 'Set reminders by time of day — morning, pre-workout, evening. OnTrack notifies you when it\'s time.' },
       { label: 'Protocol Builder', description: 'Build your full supplement stack once. OnTrack surfaces the right doses at the right time each day.' },
       { label: 'Streak Tracking', description: 'See your supplement consistency streak and full stack completion rate over time.' },
+      { label: 'Barcode Scanner', description: 'Scan any supplement barcode to pre-fill your stack automatically. Australian products resolve instantly with the correct name, dose, and timing.' },
+      { label: 'Stock Tracking', description: 'Log doses, track remaining stock, and get low-stock visibility across your whole stack so you never run out mid-cycle.' },
     ],
     accent: '#e8ff47',
-    screenshot: ss_13_44_47,
+    screenshot: ssSupplements,
     alt: 'Supps Today screen with progress ring',
+  },
+  {
+    label: 'Knowledge Library',
+    title: '70+ research-backed compounds with dosing protocols and guides.',
+    description:
+      '70+ research-backed supplements and peptides. Dosing protocols, reconstitution guides, stack recommendations, and benefits — all in one place. Tap any compound to add it to your protocol instantly.',
+    pills: [
+      { label: 'Research Protocols', description: 'Step-by-step dosing protocols with phases, cycle lengths, and stacking recommendations — sourced from clinical research.' },
+      { label: 'Peptide Database', description: 'Comprehensive peptide reference covering dosage, half-life, reconstitution, storage, and benefits for 30+ compounds.' },
+      { label: 'Add to Protocol', description: 'Tap any compound to pre-fill your supplement stack — name, dose, timing, and notes pulled straight from the library.' },
+      { label: 'Dosing Guides', description: 'Clear dosage ranges with timing, cycling, and stacking advice for every compound in the database.' },
+    ],
+    accent: '#1a9e75',
+    screenshot: ssProtocol,
+    alt: 'Knowledge Library protocols screen',
   },
   {
     label: 'Progress',
@@ -75,7 +94,7 @@ const features: Feature[] = [
       { label: 'HealthKit Sync', description: 'Pull sleep and activity data directly from Apple Health to pre-fill your daily check-ins.' },
     ],
     accent: '#1a9e75',
-    screenshot: ss_11_39_05,
+    screenshot: ssProgress,
     alt: 'Progress and personal bests screen',
   },
   {
@@ -87,9 +106,10 @@ const features: Feature[] = [
       { label: 'Group Streaks', description: 'Track how consistently your whole group shows up. Shared streaks create real accountability.' },
       { label: 'Live Feed', description: 'See your friends\' sessions, group streaks, and milestones in a live social feed.' },
       { label: 'Leaderboard', description: 'Ranked by session attendance and streaks. Friendly competition that drives consistency.' },
+      { label: 'Session RSVP', description: 'RSVP to upcoming sessions directly from the group view. Going, Maybe, or Can\'t Go — your crew knows who\'s showing up.' },
     ],
     accent: '#e8ff47',
-    screenshot: ss_11_36_11,
+    screenshot: ssGroups,
     alt: 'Groups and social training screen',
   },
 ]
