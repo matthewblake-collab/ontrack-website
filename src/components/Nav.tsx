@@ -38,14 +38,14 @@ export default function Nav() {
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-10">
           {['About', 'Features'].map((item) => (
-            <a
+            <Link
               key={item}
-              href={`/#${item.toLowerCase()}`}
+              to={`/#${item.toLowerCase()}`}
               className="relative font-['DM_Sans'] font-light text-sm text-white/55 hover:text-white transition-colors duration-200 tracking-wide group"
             >
               {item}
               <span className="absolute -bottom-0.5 left-0 right-0 h-px bg-[#e8ff47]/60 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left" />
-            </a>
+            </Link>
           ))}
           <Link
             to="/download"
@@ -107,17 +107,20 @@ export default function Nav() {
           >
             <div className="px-6 py-6 flex flex-col gap-5">
               {['About', 'Features'].map((item, i) => (
-                <motion.a
+                <motion.div
                   key={item}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.2 }}
-                  href={`/#${item.toLowerCase()}`}
-                  className="font-['DM_Sans'] font-light text-base text-white/70 hover:text-white transition-colors"
-                  onClick={() => setMenuOpen(false)}
                 >
-                  {item}
-                </motion.a>
+                  <Link
+                    to={`/#${item.toLowerCase()}`}
+                    className="font-['DM_Sans'] font-light text-base text-white/70 hover:text-white transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {item}
+                  </Link>
+                </motion.div>
               ))}
               <motion.div
                 initial={{ opacity: 0, x: -12 }}

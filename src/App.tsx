@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import Nav from './components/Nav'
 import Hero from './components/Hero'
@@ -46,10 +46,24 @@ function LandingPage() {
   )
 }
 
+function ScrollToHash() {
+  const { hash, pathname } = useLocation()
+  useEffect(() => {
+    if (!hash) return
+    const id = hash.slice(1)
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    }, 60)
+    return () => clearTimeout(t)
+  }, [hash, pathname])
+  return null
+}
+
 export default function App() {
   return (
     <HelmetProvider>
       <BrowserRouter>
+        <ScrollToHash />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/blog" element={<BlogIndex />} />
