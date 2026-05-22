@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import Nav from './components/Nav'
 import Hero from './components/Hero'
 import MarqueeStrip from './components/MarqueeStrip'
@@ -8,6 +9,10 @@ import Features from './components/Features'
 import Download from './components/Download'
 import Footer from './components/Footer'
 import DownloadPage from './components/DownloadPage'
+import PrivacyPage from './components/PrivacyPage'
+import TermsPage from './components/TermsPage'
+import BlogIndex from './components/blog/BlogIndex'
+import BlogPost from './components/blog/BlogPost'
 
 function LandingPage() {
   useEffect(() => {
@@ -43,11 +48,17 @@ function LandingPage() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/download" element={<DownloadPage />} />
-      </Routes>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/blog" element={<BlogIndex />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/download" element={<DownloadPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+        </Routes>
+      </BrowserRouter>
+    </HelmetProvider>
   )
 }

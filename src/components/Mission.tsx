@@ -64,7 +64,7 @@ export default function Mission() {
           className="text-center mb-24"
         >
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-white/10">
-            <span className="font-['DM_Sans'] font-light text-xs text-white/40 tracking-widest uppercase">
+            <span className="font-['DM_Sans'] font-light text-xs text-white/60 tracking-widest uppercase">
               Why OnTrack
             </span>
           </div>
@@ -89,7 +89,7 @@ export default function Mission() {
             "I didn't need another program. I needed two mates who wouldn't let me quit.{' '}
             <span className="text-[#e8ff47]">That's what OnTrack is.</span>"
           </blockquote>
-          <div className="mt-6 font-['DM_Sans'] font-light text-sm text-white/30">
+          <div className="mt-6 font-['DM_Sans'] font-light text-sm text-white/60">
             — Matt, Founder of OnTrack Focus
           </div>
         </motion.div>

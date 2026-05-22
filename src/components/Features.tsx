@@ -301,14 +301,14 @@ export default function Features() {
           className="text-center mb-28"
         >
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.02]">
-            <span className="font-['DM_Sans'] font-light text-xs text-white/40 tracking-widest uppercase">
+            <span className="font-['DM_Sans'] font-light text-xs text-white/60 tracking-widest uppercase">
               Features
             </span>
           </div>
           <h2 className="font-['Syne'] font-bold text-4xl lg:text-6xl leading-tight text-white" style={{ letterSpacing: '-0.02em' }}>
             Everything you need.
             <br />
-            <span className="text-white/25">Nothing you don't.</span>
+            <span className="text-white/60">Nothing you don't.</span>
           </h2>
         </motion.div>
 

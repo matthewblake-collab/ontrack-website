@@ -1,6 +1,9 @@
 const items = [
   'Daily Workouts',
   'Supplement Tracking',
+  'Knowledge Library',
+  'Research Protocols',
+  'Peptide Database',
   'Group Accountability',
   'Progress Analytics',
   'Mental Health',
@@ -28,7 +31,7 @@ export default function MarqueeStrip() {
       >
         {track.map((item, i) => (
           <div key={i} className="flex items-center gap-6 px-6">
-            <span className="font-['Syne'] font-black text-sm tracking-widest uppercase text-white/25">
+            <span className="font-['Syne'] font-black text-sm tracking-widest uppercase text-white/60">
               {item}
             </span>
             <span className="text-[#e8ff47] text-lg leading-none" style={{ opacity: 0.6 }}>·</span>

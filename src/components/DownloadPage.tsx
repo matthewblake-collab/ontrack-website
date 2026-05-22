@@ -8,7 +8,7 @@ import ss_13_44_47 from '../assets/screenshots/ss_13_44_47.png'
 import ss_11_39_05 from '../assets/screenshots/ss_11_39_05.png'
 import ss_11_36_11 from '../assets/screenshots/ss_11_36_11.png'
 
-const TESTFLIGHT_URL = 'https://testflight.apple.com/join/q65zPgbv'
+const TESTFLIGHT_URL = 'https://apps.apple.com/app/id6760957657'
 const TESTFLIGHT_APPSTORE = 'https://apps.apple.com/app/testflight/id899247664'
 
 const fadeUp = {
@@ -163,15 +163,15 @@ export default function DownloadPage() {
             <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full border border-[#e8ff47]/20 bg-[#e8ff47]/[0.05]">
               <span className="relative flex h-2 w-2">
                 <motion.span
-                  className="absolute inline-flex h-full w-full rounded-full bg-[#1a9e75]"
+                  className="absolute inline-flex h-full w-full rounded-full bg-[#e8a030]"
                   animate={{ scale: [1, 1.5, 1] }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                   style={{ opacity: 0.6 }}
                 />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1a9e75]" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#e8a030]" />
               </span>
               <span className="font-['DM_Sans'] font-light text-xs text-[#e8ff47]/80 tracking-widest uppercase">
-                Free on TestFlight · iOS
+                In Review · App Store
               </span>
             </div>
           </motion.div>
@@ -201,21 +201,19 @@ export default function DownloadPage() {
             animate="show"
             className="flex flex-col items-center gap-4 mb-8"
           >
+            {/* TESTFLIGHT_URL (now App Store) preserved in constant for re-enable */}
             <motion.a
-              href={TESTFLIGHT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-3 bg-[#e8ff47] text-[#0a0a0a] font-['Syne'] font-bold text-base px-8 py-4 rounded-full hover:bg-white transition-colors duration-200"
+              aria-disabled="true"
+              onClick={(e) => e.preventDefault()}
+              className="inline-flex items-center gap-3 bg-[#e8ff47] text-[#0a0a0a] font-['Syne'] font-bold text-base px-8 py-4 rounded-full transition-colors duration-200 opacity-60 cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
               </svg>
-              Get OnTrack Free
+              Coming Soon
             </motion.a>
-            <p className="font-['DM_Sans'] font-light text-sm text-white/30">
-              Already have TestFlight? Tap the button above.
+            <p className="font-['DM_Sans'] font-light text-sm text-white/60">
+              App Store approval in progress.
             </p>
           </motion.div>
 
@@ -235,7 +233,7 @@ export default function DownloadPage() {
                 level="M"
               />
             </div>
-            <p className="font-['DM_Sans'] font-light text-xs text-white/25">
+            <p className="font-['DM_Sans'] font-light text-xs text-white/60">
               Scan with your iPhone camera
             </p>
           </motion.div>
@@ -258,7 +256,7 @@ export default function DownloadPage() {
             className="text-center mb-16"
           >
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.02]">
-              <span className="font-['DM_Sans'] font-light text-xs text-white/40 tracking-widest uppercase">
+              <span className="font-['DM_Sans'] font-light text-xs text-white/60 tracking-widest uppercase">
                 How to Install
               </span>
             </div>
@@ -320,17 +318,14 @@ export default function DownloadPage() {
                   Tap the button below to open the OnTrack Focus beta in TestFlight.
                 </p>
                 <motion.a
-                  href={TESTFLIGHT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2.5 bg-[#e8ff47] text-[#0a0a0a] font-['Syne'] font-bold text-sm px-6 py-3 rounded-full hover:bg-white transition-colors duration-200"
+                  aria-disabled="true"
+                  onClick={(e) => e.preventDefault()}
+                  className="inline-flex items-center gap-2.5 bg-[#e8ff47] text-[#0a0a0a] font-['Syne'] font-bold text-sm px-6 py-3 rounded-full transition-colors duration-200 opacity-60 cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                   </svg>
-                  Join the Beta
+                  Coming Soon
                 </motion.a>
               </div>
             </motion.div>
@@ -377,7 +372,7 @@ export default function DownloadPage() {
             className="text-center mb-28"
           >
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.02]">
-              <span className="font-['DM_Sans'] font-light text-xs text-white/40 tracking-widest uppercase">
+              <span className="font-['DM_Sans'] font-light text-xs text-white/60 tracking-widest uppercase">
                 Inside the App
               </span>
             </div>
@@ -415,21 +410,18 @@ export default function DownloadPage() {
               Stop waiting for{' '}
               <span className="text-[#e8ff47]">motivation.</span>
             </h2>
-            <p className="font-['DM_Sans'] font-light text-base text-white/40 leading-relaxed mb-10 max-w-md mx-auto">
+            <p className="font-['DM_Sans'] font-light text-base text-white/60 leading-relaxed mb-10 max-w-md mx-auto">
               It's free. It takes 2 minutes. Your future self is watching.
             </p>
             <motion.a
-              href={TESTFLIGHT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-3 bg-[#e8ff47] text-[#0a0a0a] font-['Syne'] font-bold text-base px-8 py-4 rounded-full hover:bg-white transition-colors duration-200"
+              aria-disabled="true"
+              onClick={(e) => e.preventDefault()}
+              className="inline-flex items-center gap-3 bg-[#e8ff47] text-[#0a0a0a] font-['Syne'] font-bold text-base px-8 py-4 rounded-full transition-colors duration-200 opacity-60 cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
               </svg>
-              Get OnTrack Free
+              Coming Soon
             </motion.a>
           </motion.div>
         </div>
