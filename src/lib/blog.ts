@@ -1,7 +1,11 @@
 // reading-time removed — replaced with browser-safe implementation
-function estimateReadingTime(text: string): number {
+function estimateReadingTime(text: unknown): number {
   const wordsPerMinute = 200
-  const wordCount = text.trim().split(/\s+/).length
+  // `text` can be a non-string when the `?raw` glob is intercepted by the
+  // enforce:'pre' MDX plugin (returns the compiled component, not source).
+  // Coerce defensively so the blog tree never crashes on `.trim()`.
+  const safe = typeof text === 'string' ? text.trim() : ''
+  const wordCount = safe ? safe.split(/\s+/).length : 0
   return Math.max(1, Math.round(wordCount / wordsPerMinute))
 }
 
