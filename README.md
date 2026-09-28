@@ -71,3 +71,4 @@ export default defineConfig([
   },
 ])
 ```
+Deployed by Maya from Telegram.
