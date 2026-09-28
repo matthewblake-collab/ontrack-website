@@ -28,3 +28,6 @@ dist-ssr
 
 # System 06 UI scratch dir
 .ui-system/
+
+# Claude Code worktrees live here; never track them (a gitlink with no .gitmodules can break Netlify's clone)
+.claude/worktrees/
